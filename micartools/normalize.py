@@ -19,47 +19,144 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
+"""
+DEPENDENCIES
+"""
+import pandas as pd
 
 
+"""
+DESCRIPTION:
+VARIABLES:
+USAGE:
+ASSUMPTIONS:
+"""
+def custom_list(file):
+    gene_list = []
 
-def prep_data(data, info, gene_axis='row'):
+    with open(file, 'r') as f:
+        for line in f:
+            gene_list = line.split(",")
 
-    #Make sure data is properly formatted
-    if gene_axis == 'row':
-        data = data
-    elif gene_axis == 'col':
-        data = data.T
+    return gene_list
+
+"""
+DESCRIPTION: Create dictionary of probes and their gene names for the microarray probe collapser
+VARIABLES:
+reference= Full path and file name for GPL reference file, accessed from NCBI (should be a .txt file)
+gene_list= Full path and file name to .csv file listing gene names to get probes for. Resulting function dictionary will only contain these genes and their probes (default: None)
+no_multimappers= Do not allow ambiguous probes in the probe-gene dictionary (default: True)
+USAGE:
+import micartools as mat
+gene_dict = mat.prep_collapser("~/Desktop/GPL570.txt")
+ASSUMPTIONS:
+If using gene_list option, file must be a .csv
+Assumes GPL .txt file from NCBI is tab delimited
+"""
+def prep_collapser(reference, gene_list=None, no_multimappers=True):
+
+    #Get probe/gene_name reference file and import into a dataframe
+    df = pd.read_csv(str(reference), sep="\t", low_memory=False, comment='#') #no index
+    df = df[['ID','Gene Symbol']]
+    df = df.dropna()
+
+    #If a custom gene list is given so that only certain probes are looked at and collapsed downstream
+    #Take the gene list file, join genes for regex search
+    #Create dictionary for just the probes corresponding with the genes of interest
+    if gene_list != None:
+        if type(gene_list) == list:
+
+            gene_list = custom_list(gene_list)
+
+            search = '|'.join(gene_list)
+            search = search.upper()
+
+            df = df[df['Gene Symbol'].str.contains(search)] #only df where probes of interest are
+            df_dict = df.set_index('ID')['Gene Symbol'].to_dict()
+    #Take full probe set and create dictionary
     else:
-        #Exit out of function
-        print('Inappropriate gene_axis input provided')
-        return
+        df_dict = df.set_index('ID')['Gene Symbol'].to_dict()
 
-    #Import data and drop NAs
-    orig_df = read_df(file)
-    orig_df = orig_df.T
-    orig_df = orig_df.dropna(axis=1)
-
-    #Save gene list
-    feat_cols = list(orig_df.columns[2:].values)
-
-    #Drop labels
-    if label == True and grade == False:
-        df_scale1 = orig_df.loc[:, orig_df.columns != 'label']
-    if label == False and grade == True:
-        df_scale1 = orig_df.loc[:, orig_df.columns != 'grade']
-    elif label == True and grade == True:
-        df_scale = orig_df.loc[:, orig_df.columns != 'label']
-        df_scale1 = df_scale.loc[:, df_scale.columns != 'grade']
+    #If allowing for multimappers, return dictionary as is
+    if no_multimappers == False:
+        return df_dict
+    #Remove any probes that map to several genes
     else:
-        pass
+        df_dict_mod = {}
+        for key, value in df_dict.items():
+            if '///' in value:
+                continue
+            else:
+                df_dict_mod[key] = value
 
-    #Convert data to float
-    df_scale2 = df_scale1.astype(dtype='float')
+        return df_dict_mod
 
-    #gene normalization (column)
-    df_scale2[df_scale2.columns] = preprocessing.scale(df_scale2[df_scale2.columns])
+"""
+DESCRIPTION: Collapse probes of microarray dataset using previously prepared probe collapser dictionary (see prep_collapser function))
+METHODS: Works by taking all probe expression data of a particular gene and determines a mean expression value for each sample for the given gene
+VARIABLES:
+df= Dataframe of microarray probe data to be collapsed
+dict= Probe collapser dictionary created in the prep_collapser function
+USAGE:
+import micartools as mat
+df_collapsed = mat.probe_collapse(df, collapser_dict)
+ASSUMPTIONS:
+A probe collapser dictionary has been previously prepared using the prep_collapser function
+"""
+#Takes dataframe to be collapsed and dictionary of probe names and gene names
+#filename/table to read in, samples as column headers, probe_ids headed by "probes"
+#dictionary where keys are probe_ids and values are gene name
+#Collapse GEO probes by gene name, where resulting gene row is the average of all corresponding probe sets
+def probe_collapse(df, dict):
 
-    #Format dataframe for downstream
-    df_scale2 = df_scale2.T
+    #Get list of probes to find in df
+    dict_list = list(dict.keys())
 
-    return df_scale2, orig_df, feat_cols
+    #only keep df rows where probes of interest are
+    #(in cases where only looking at certain genes, default: all genes)
+    #column 'name' header for probes in these files
+    df = df[df['name'].isin(dict_list)]
+
+    #Map gene names in place of probes
+    df['name'] = df['name'].map(dict)
+
+    #Set gene names as indices (allows for multiple indices with same name)
+    #Needed to remove strings from df to allow for next step
+    df = df.set_index('name', drop=True)
+
+    #force data to float
+    df_numeric = df.apply(pd.to_numeric)
+    #Reset indices to its own column to allow for sorting in next step
+    df_numeric['name_sort'] =  df_numeric.index
+
+    #groupby index (gene name) and collapse, taking the mean of rows with same name in 'name_sort'
+    #Sets name_sort column names (post-collapse) as indices
+    df_collapsed = df_numeric.groupby('name_sort').mean()
+
+    #Remove double header for indices
+    del df_collapsed.index.name
+
+    return df_collapsed
+
+"""
+DESCRIPTION: Ties prep_collapser and probe_collapse functions together
+VARIABLES:
+df= Dataframe of microarray probe data to be collapsed
+reference= Full path and file name for GPL reference file, accessed from NCBI (should be a .txt file)
+gene_list= Full path and file name to .csv file listing gene names to get probes for. Resulting function dictionary will only contain these genes and their probes (default: None)
+no_multimappers= Do not allow ambiguous probes in the probe-gene dictionary (default: True)
+USAGE:
+import micartools as mat
+df_collapsed = mat.auto_collapse(df, "~/Desktop/GPL570.csv")
+ASSUMPTIONS:
+See assumptions for prep_collapser and probe_collapse functions
+"""
+def auto_collapse(df, reference, gene_list=None, no_multimappers=True):
+
+    dict = prep_collapser(reference, gene_list=gene_list, no_multimappers=no_multimappers)
+    df_collapsed = probe_collapse(df, dict)
+    return df_collapsed
+
+def geo_mean(df):
+
+    return df

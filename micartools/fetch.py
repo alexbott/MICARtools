@@ -167,3 +167,33 @@ def drop_label(data, info, label):
         df = data.drop(drop_ids_list, axis=1)
 
         return df
+
+"""
+DESCRIPTION: Keep samples by list of label names
+VARIABLES:
+data= Dataframe containing expression data
+info= Dataframe containing sample information data
+labels= List of sample types to keep
+USAGE:
+import micartools as mat
+df = mat.keep_labels(df, sample_info, ['normal','adenoma'])
+ASSUMPTIONS:
+Dataframe axes have been properly formatted (samples are columns, genes are rows)
+Labels provided are in list format
+"""
+def keep_labels(data, info, label_list):
+
+    #Check file formats
+    if type(label_list) is not list:
+        return
+
+    #Keep samples by name (will grab from info df)
+    else:
+        #Create list of sample_ids based on what is not provided in keep list
+        drop_ids = info[~info[1].isin(label_list)]
+        drop_ids_list = list(drop_ids[0])
+
+        #Drop samples not given in list to keep
+        df = data.drop(drop_ids_list, axis=1)
+
+        return df
