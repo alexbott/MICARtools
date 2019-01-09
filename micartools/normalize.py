@@ -23,22 +23,7 @@ this program.  If not, see <https://www.gnu.org/licenses/>.
 DEPENDENCIES
 """
 import pandas as pd
-
-
-"""
-DESCRIPTION:
-VARIABLES:
-USAGE:
-ASSUMPTIONS:
-"""
-def custom_list(file):
-    gene_list = []
-
-    with open(file, 'r') as f:
-        for line in f:
-            gene_list = line.split(",")
-
-    return gene_list
+from .utils import custom_list
 
 """
 DESCRIPTION: Create dictionary of probes and their gene names for the microarray probe collapser
@@ -103,10 +88,6 @@ df_collapsed = mat.probe_collapse(df, collapser_dict)
 ASSUMPTIONS:
 A probe collapser dictionary has been previously prepared using the prep_collapser function
 """
-#Takes dataframe to be collapsed and dictionary of probe names and gene names
-#filename/table to read in, samples as column headers, probe_ids headed by "probes"
-#dictionary where keys are probe_ids and values are gene name
-#Collapse GEO probes by gene name, where resulting gene row is the average of all corresponding probe sets
 def probe_collapse(df, dict):
 
     #Get list of probes to find in df
