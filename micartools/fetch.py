@@ -77,6 +77,15 @@ def get_geo(geo_id):
     return df
 
 """
+DESCRIPTION:
+VARIABLES:
+USAGE:
+ASSUMPTIONS:
+"""
+def get_geo_info(geo_id):
+
+
+"""
 DESCRIPTION: Get user file with pertinent sample information
 VARIABLES:
 file_name= full path of file to import into pandas dataframe

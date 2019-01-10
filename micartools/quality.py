@@ -18,3 +18,19 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with
 this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+
+"""
+DEPENDENCIES
+"""
+import pandas as pd
+import matplotlib as plt
+import seaborn as sns
+
+"""
+DESCRIPTION: Check sample means and medians
+METHODS: Output density plot for dataframe, barplot for each sample
+ASSUMPTIONS:
+Dataframe has been properly formatted so that probes or genes are rows and samples are columns
+"""
+def check_samples(df):
+    
