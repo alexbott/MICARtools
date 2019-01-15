@@ -29,8 +29,26 @@ import seaborn as sns
 """
 DESCRIPTION: Check sample means and medians
 METHODS: Output density plot for dataframe, barplot for each sample
+VARIABLES:
+USAGE:
 ASSUMPTIONS:
 Dataframe has been properly formatted so that probes or genes are rows and samples are columns
 """
 def check_samples(df):
-    
+
+    wid = len(list(df))
+    ax = df.boxplot(column=list(df), figsize=(wid,wid/3))
+    ax.set_xlabel('Samples')
+    ax.set_ylabel('Expression')
+
+"""
+DESCRIPTION: Cleans axis of NULL values
+VARIABLES:
+USAGE:
+ASSUMPTIONS:
+If dataframe has been properly formatted previously and genes are in rows, the default parameters will remove along the gene axis
+"""
+def clean_df(df, axis=0):
+
+    df = df.dropna(axis=axis)
+    return df

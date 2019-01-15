@@ -84,6 +84,8 @@ ASSUMPTIONS:
 """
 def get_geo_info(geo_id):
 
+    print(geo_id)
+
 
 """
 DESCRIPTION: Get user file with pertinent sample information

@@ -23,6 +23,7 @@ this program.  If not, see <https://www.gnu.org/licenses/>.
 DEPENDENCIES
 """
 import pandas as pd
+from sklearn import preprocessing
 from .utils import custom_list
 
 """
@@ -138,6 +139,40 @@ def auto_collapse(df, reference, gene_list=None, no_multimappers=True):
     df_collapsed = probe_collapse(df, dict)
     return df_collapsed
 
+"""
+DESCRIPTION: Take the geometric mean of samples (columns)
+"""
 def geo_mean(df):
 
     return df
+
+"""
+DESCRIPTION:
+"""
+def prep_df(df, info, label=True):
+
+    #Map labels to samples
+    labels = pd.Series(info[1].values,index=info[0]).to_dict()
+    df.loc['label'] = df.columns.map(id_disease.get)
+
+    #Output collapsed dataframe
+    newIndex = ['label'] + [ind for ind in df.index if ind != 'label']
+    df = df.reindex(index=newIndex)
+
+    #Prep dataset for downstream use
+    #Drop labels
+    if label == True:
+        df_scaled = df.loc[df.columns != 'label',:] #TODO get all rows now named label
+    else:
+        pass
+
+    #Convert data to float
+    df_scale2 = df_scale1.astype(dtype='float')
+
+    #gene normalization (column)
+    df_scale2[df_scale2.columns] = preprocessing.scale(df_scale2[df_scale2.columns], axis=) #TODO figure out axis
+
+    #Format dataframe for downstream
+    df_scale2 = df_scale2.T
+
+    return df_scale2, df
