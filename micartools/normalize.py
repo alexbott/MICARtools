@@ -97,11 +97,16 @@ def probe_collapse(df, dict):
     #only keep df rows where probes of interest are
     #(in cases where only looking at certain genes, default: all genes)
     #column 'name' header for probes in these files
-    df = df[df['name'].isin(dict_list)]
+    try:
+        df = df[df['name'].isin(dict_list)]
+    except:
+        df['name'] = df.index
+        df = df[df['name'].isin(dict_list)]
 
     #Map gene names in place of probes
+    #Will set off SettingwithCopyWarning -- should be fine as we are replacing values in same column and it appears to change as expected
     df['name'] = df['name'].map(dict)
-
+    
     #Set gene names as indices (allows for multiple indices with same name)
     #Needed to remove strings from df to allow for next step
     df = df.set_index('name', drop=True)
@@ -170,7 +175,7 @@ def prep_df(df, info, label=True):
     df_scale2 = df_scale1.astype(dtype='float')
 
     #gene normalization (column)
-    df_scale2[df_scale2.columns] = preprocessing.scale(df_scale2[df_scale2.columns], axis=) #TODO figure out axis
+    df_scale2[df_scale2.columns] = preprocessing.scale(df_scale2[df_scale2.columns], axis=1) #TODO figure out axis
 
     #Format dataframe for downstream
     df_scale2 = df_scale2.T
