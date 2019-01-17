@@ -192,19 +192,30 @@ ASSUMPTIONS:
 Dataframe axes have been properly formatted (samples are columns, genes are rows)
 Labels provided are in list format
 """
-def keep_labels(data, info, label_list):
+def keep_labels(data, info, label_list=None):
 
-    #Check file formats
-    if type(label_list) is not list:
-        return
+    if label_list == None:
+        label_list = list(set(info[1]))
 
-    #Keep samples by name (will grab from info df)
-    else:
-        #Create list of sample_ids based on what is not provided in keep list
-        drop_ids = info[~info[1].isin(label_list)]
-        drop_ids_list = list(drop_ids[0])
+        keep_ids = info[info[1].isin(label_list)]
+        keep_ids_list = list(keep_ids[0])
 
         #Drop samples not given in list to keep
-        df = data.drop(drop_ids_list, axis=1)
+        df = data[keep_ids_list]
 
-        return df
+    else:
+        #Check file formats
+        if type(label_list) is not list:
+            return
+
+        #Keep samples by name (will grab from info df)
+        else:
+
+            #Create list of sample_ids based on what is not provided in keep list
+            drop_ids = info[~info[1].isin(label_list)]
+            drop_ids_list = list(drop_ids[0])
+
+            #Drop samples not given in list to keep
+            df = data.drop(drop_ids_list, axis=1)
+
+    return df
