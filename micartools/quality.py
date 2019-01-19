@@ -34,10 +34,10 @@ USAGE:
 ASSUMPTIONS:
 Dataframe has been properly formatted so that probes or genes are rows and samples are columns
 """
-def check_samples(df):
+def check_samples(data):
 
-    wid = len(list(df))
-    ax = df.boxplot(column=list(df), figsize=(wid,wid/3))
+    wid = len(list(data))
+    ax = data.boxplot(column=list(data), figsize=(wid,wid/3))
     ax.set_xlabel('Samples')
     ax.set_ylabel('Expression')
 
@@ -48,7 +48,7 @@ USAGE:
 ASSUMPTIONS:
 If dataframe has been properly formatted previously and genes are in rows, the default parameters will remove along the gene axis
 """
-def clean_df(df, axis=0):
+def clean_df(data, axis=0):
 
-    df = df.dropna(axis=axis)
-    return df
+    data = data.dropna(axis=axis)
+    return data

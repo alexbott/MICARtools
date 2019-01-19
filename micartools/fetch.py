@@ -48,17 +48,17 @@ If orientation is not default, it is then specified or else function will not be
 def get_df(file_name, delimiter=",", low_memory=False, gene_axis='row'):
 
     #Read in file
-    df = pd.read_csv(str(file_name), sep=delimiter, index_col=0, header=0, low_memory=low_memory)
+    data = pd.read_csv(str(file_name), sep=delimiter, index_col=0, header=0, low_memory=low_memory)
 
     #Check data orientation
     if str(gene_axis).lower() == 'row':
-        df = df
+        data = data
     elif str(gene_axis).lower() == 'col':
-        df = df.T
+        data = data.T
     else:
         print("Incorrect gene_axis option specified")
 
-    return df
+    return data
 
 """
 DESCRIPTION: Get GEO dataframe
@@ -72,9 +72,9 @@ def get_geo(geo_id):
 
     #Import GSE dataset
     gse = GEOparse.get_GEO(geo=str(geo_id).upper())
-    df = gse.pivot_samples('VALUE')
-    del df.index.name
-    return df
+    data = gse.pivot_samples('VALUE')
+    del data.index.name
+    return data
 
 """
 DESCRIPTION:
@@ -84,7 +84,7 @@ ASSUMPTIONS:
 """
 def get_geo_info(geo_id):
 
-    print(geo_id)
+    print('Coming soon...')
 
 
 """
@@ -105,27 +105,27 @@ If orientation is not default, it is then specified or else function will not be
 def get_info(file_name, delimiter=",", axis="col", sample_ids=0, labels=1):
 
     #Read in file
-    df = pd.read_csv(str(file_name), sep=delimiter, header=None)
+    info = pd.read_csv(str(file_name), sep=delimiter, header=None)
 
     #Reorganize dataframe as necessary so that data is column-wise and
     #sample_ids are the first column, labels are the second column
     if str(axis).lower() == 'col':
         if sample_ids == 0 and labels == 1:
-            df = df
+            info = info
         else:
-            df = df[[sample_ids, labels]] #Reorder dataframe columns
-            df.columns = [0, 1]
+            info = info[[sample_ids, labels]] #Reorder dataframe columns
+            info.columns = [0, 1]
     elif str(axis).lower() == 'row':
-        df = df.T #Rotate dataframe to make it column-wise
+        info = info.T #Rotate dataframe to make it column-wise
         if sample_ids == 0 and labels == 1:
-            df = df
+            info = info
         else:
-            df = df[[sample_ids, labels]] #Reorder dataframe columns
-            df.columns = [0, 1]
+            info = info[[sample_ids, labels]] #Reorder dataframe columns
+            info.columns = [0, 1]
     else:
         print("Incorrect axis option specified")
 
-    return df
+    return info
 
 """
 DESCRIPTION: Drop samples by sample IDs -- pass in a list of names
@@ -146,8 +146,8 @@ def drop_samples(data, ids):
 
     #Drop samples in list
     else:
-        df = data.drop(ids, axis=1)
-        return df
+        data_dropped = data.drop(ids, axis=1)
+        return data_dropped
 
 """
 DESCRIPTION: Drop samples by label group name
@@ -175,9 +175,9 @@ def drop_label(data, info, label):
         drop_ids_list = list(drop_ids[0])
 
         #Remove these samples from data
-        df = data.drop(drop_ids_list, axis=1)
+        data_dropped = data.drop(drop_ids_list, axis=1)
 
-        return df
+        return data_dropped
 
 """
 DESCRIPTION: Keep samples by list of label names
@@ -201,7 +201,7 @@ def keep_labels(data, info, label_list=None):
         keep_ids_list = list(keep_ids[0])
 
         #Drop samples not given in list to keep
-        df = data[keep_ids_list]
+        data_dropped = data[keep_ids_list]
 
     else:
         #Check file formats
@@ -216,6 +216,6 @@ def keep_labels(data, info, label_list=None):
             drop_ids_list = list(drop_ids[0])
 
             #Drop samples not given in list to keep
-            df = data.drop(drop_ids_list, axis=1)
+            data_dropped = data.drop(drop_ids_list, axis=1)
 
-    return df
+    return data_dropped
