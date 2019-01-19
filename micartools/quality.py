@@ -51,4 +51,5 @@ If dataframe has been properly formatted previously and genes are in rows, the d
 def clean_df(data, axis=0):
 
     data = data.dropna(axis=axis)
+
     return data
