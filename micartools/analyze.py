@@ -66,7 +66,8 @@ def heatmap(data_scaled, data_labeled, col_colors=None, gene_list=None, save_fig
     #Set colors for plotting
     if type(col_colors) is dict:
         labels = data_labeled.loc['label']
-        col_colors = labels.map(col_colors)
+        color_map = labels.map(col_colors)
+
 
     #Custom panel heatmap
     if gene_list != None:
@@ -82,26 +83,41 @@ def heatmap(data_scaled, data_labeled, col_colors=None, gene_list=None, save_fig
             return
 
         #Prep data for plotting
-        plot_data = custom_data
+        plot_data = custom_data.dropna(axis=0)
 
     else:
-        plot_data = data_scaled
+        plot_data = data_scaled.dropna(axis=0)
+
 
     #Generate clustermap
     sns.set(font_scale=float(font_scale))
-    sns.clustermap(plot_data,
-                    cmap=cmap,
-                    center=float(center),
-                    metric=str(metric),
-                    method=str(method),
-                    xticklabels=xticklabels,
-                    linewidths=float(linewidths),
-                    linecolor=str(linecolor),
-                    col_cluster=col_cluster,
-                    row_cluster=row_cluster,
-                    col_colors=col_colors,
-                    figsize=figsize
-                   )
+    if col_colors is None:
+        sns.clustermap(plot_data,
+                        cmap=cmap,
+                        center=float(center),
+                        metric=str(metric),
+                        method=str(method),
+                        xticklabels=xticklabels,
+                        linewidths=float(linewidths),
+                        linecolor=str(linecolor),
+                        col_cluster=col_cluster,
+                        row_cluster=row_cluster,
+                        figsize=figsize
+                       )
+    else:
+        sns.clustermap(plot_data,
+                        cmap=cmap,
+                        center=float(center),
+                        metric=str(metric),
+                        method=str(method),
+                        xticklabels=xticklabels,
+                        linewidths=float(linewidths),
+                        linecolor=str(linecolor),
+                        col_cluster=col_cluster,
+                        row_cluster=row_cluster,
+                        col_colors=color_map,
+                        figsize=figsize
+                       )
 
     #Save figure
     if save_fig is not None:
