@@ -22,7 +22,7 @@ this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 DEPENDENCIES
 """
-from .utils import custom_list, genelist
+from .utils import custom_list
 import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
