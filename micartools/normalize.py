@@ -28,13 +28,16 @@ from .utils import custom_list
 
 """
 DESCRIPTION: Create dictionary of probes and their gene names for the microarray probe collapser
+
 VARIABLES:
 reference= Full path and file name for GPL reference file, accessed from NCBI (should be a .txt file)
 gene_list= Full path and file name to .csv file listing gene names to get probes for. Resulting function dictionary will only contain these genes and their probes (default: None)
 no_multimappers= Do not allow ambiguous probes in the probe-gene dictionary (default: True)
+
 USAGE:
 import micartools as mat
 gene_dict = mat.prep_collapser("~/Desktop/GPL570.txt")
+
 ASSUMPTIONS:
 If using gene_list option, file must be a .csv
 Assumes GPL .txt file from NCBI is tab delimited
@@ -79,17 +82,23 @@ def prep_collapser(reference, gene_list=None, no_multimappers=True):
 
 """
 DESCRIPTION: Collapse probes of microarray dataset using previously prepared probe collapser dictionary (see prep_collapser function))
+
 METHODS: Works by taking all probe expression data of a particular gene and determines a mean expression value for each sample for the given gene
+
 VARIABLES:
-df= Dataframe of microarray probe data to be collapsed
+data= Dataframe of microarray probe data to be collapsed
 dict= Probe collapser dictionary created in the prep_collapser function
+
 USAGE:
 import micartools as mat
 df_collapsed = mat.probe_collapse(df, collapser_dict)
+
 ASSUMPTIONS:
 A probe collapser dictionary has been previously prepared using the prep_collapser function
 """
-def probe_collapse(df, dict):
+def probe_collapse(data, dict):
+
+    print('Presumably, a SettingwithCopyWarning error will now appear. Ignore this warning, the collapser is working properly.')
 
     #Get list of probes to find in df
     dict_list = list(dict.keys())
@@ -98,86 +107,120 @@ def probe_collapse(df, dict):
     #(in cases where only looking at certain genes, default: all genes)
     #column 'name' header for probes in these files
     try:
-        df = df[df['name'].isin(dict_list)]
+        data = data[data['name'].isin(dict_list)]
     except:
-        df['name'] = df.index
-        df = df[df['name'].isin(dict_list)]
+        data['name'] = data.index
+        data = data[data['name'].isin(dict_list)]
 
     #Map gene names in place of probes
     #Will set off SettingwithCopyWarning -- should be fine as we are replacing values in same column and it appears to change as expected
-    df['name'] = df['name'].map(dict)
-    
+    data['name'] = data['name'].map(dict)
+
     #Set gene names as indices (allows for multiple indices with same name)
     #Needed to remove strings from df to allow for next step
-    df = df.set_index('name', drop=True)
+    data = data.set_index('name', drop=True)
 
     #force data to float
-    df_numeric = df.apply(pd.to_numeric)
+    data_numeric = data.apply(pd.to_numeric)
     #Reset indices to its own column to allow for sorting in next step
-    df_numeric['name_sort'] =  df_numeric.index
+    data_numeric['name_sort'] =  data_numeric.index
 
     #groupby index (gene name) and collapse, taking the mean of rows with same name in 'name_sort'
     #Sets name_sort column names (post-collapse) as indices
-    df_collapsed = df_numeric.groupby('name_sort').mean()
+    data_collapsed = data_numeric.groupby('name_sort').mean()
 
     #Remove double header for indices
-    del df_collapsed.index.name
+    del data_collapsed.index.name
 
-    return df_collapsed
+    return data_collapsed
 
 """
 DESCRIPTION: Ties prep_collapser and probe_collapse functions together
+
 VARIABLES:
-df= Dataframe of microarray probe data to be collapsed
+data= Dataframe of microarray probe data to be collapsed
 reference= Full path and file name for GPL reference file, accessed from NCBI (should be a .txt file)
 gene_list= Full path and file name to .csv file listing gene names to get probes for. Resulting function dictionary will only contain these genes and their probes (default: None)
 no_multimappers= Do not allow ambiguous probes in the probe-gene dictionary (default: True)
+
 USAGE:
 import micartools as mat
 df_collapsed = mat.auto_collapse(df, "~/Desktop/GPL570.csv")
+
 ASSUMPTIONS:
 See assumptions for prep_collapser and probe_collapse functions
 """
-def auto_collapse(df, reference, gene_list=None, no_multimappers=True):
+def auto_collapse(data, reference, gene_list=None, no_multimappers=True):
 
     dict = prep_collapser(reference, gene_list=gene_list, no_multimappers=no_multimappers)
-    df_collapsed = probe_collapse(df, dict)
-    return df_collapsed
+    data_collapsed = probe_collapse(data, dict)
+
+    return data_collapsed
 
 """
-DESCRIPTION: Take the geometric mean of samples (columns)
-"""
-def geo_mean(df):
+DESCRIPTION: Normalize samples, prints sample axis means for verification
 
-    return df
+METHODS: For each sample axis, divide each cell by the sum the axis divided by the factor provided (default: 1e6)
+
+VARIABLES:
+data= Dataframe of microarray probe data
+axis= Axis where samples are found in the dataframe
+factor= Numeric value to scale samples by
+
+USAGE:
+import micartools as mat
+df_norm = mat.sample_norm(df)
+"""
+def sample_norm(data, axis=1, factor=1e6):
+
+    #Initialize axis variables based on user input
+    if axis == 0:
+        axis_2 = 1
+    elif axis == 1:
+        axis_2 = 0
+    else:
+        pass
+
+    #Perform normalization
+    data_norm = data.divide((data.sum(axis=axis_2) / float(factor)),axis=axis)
+
+    print(data_norm.mean(axis=axis_2))
+
+    return data_norm
 
 """
-DESCRIPTION:
+DESCRIPTION: Prepare dataframes for analysis plotting functions found within analyze.py
+
+METHODS:
+Original dataframe is unformatted besides adding labels from info to the first row of the dataframe
+Formatted dataframe is scaled if option provided and dataframe is converted to float
+
+VARIABLES:
+df=
+info=
+gene_scale=
+label= Dataframe
+
+USAGE:
+
+ASSUMPTIONS:
+Requires properly formatted df and info dataframes for MICARtools usage
 """
-def prep_df(df, info, label=True):
+def prep_df(df, info, gene_scale=True):
+
+    #Convert data to float
+    df_scaled = df.astype(dtype='float')
+
+    #gene normalization
+    if gene_scale == True:
+        df_scaled[df_scaled.columns] = preprocessing.scale(df_scaled[df_scaled.columns], axis=1)
 
     #Map labels to samples
     labels = pd.Series(info[1].values,index=info[0]).to_dict()
-    df.loc['label'] = df.columns.map(id_disease.get)
+    df.loc['label'] = df.columns.map(labels.get)
 
     #Output collapsed dataframe
     newIndex = ['label'] + [ind for ind in df.index if ind != 'label']
     df = df.reindex(index=newIndex)
 
-    #Prep dataset for downstream use
-    #Drop labels
-    if label == True:
-        df_scaled = df.loc[df.columns != 'label',:] #TODO get all rows now named label
-    else:
-        pass
-
-    #Convert data to float
-    df_scale2 = df_scale1.astype(dtype='float')
-
-    #gene normalization (column)
-    df_scale2[df_scale2.columns] = preprocessing.scale(df_scale2[df_scale2.columns], axis=1) #TODO figure out axis
-
-    #Format dataframe for downstream
-    df_scale2 = df_scale2.T
-
-    return df_scale2, df
+    return df_scaled, df
