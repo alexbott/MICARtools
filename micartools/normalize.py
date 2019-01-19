@@ -212,8 +212,10 @@ Requires properly formatted df and info dataframes for MICARtools usage
 """
 def prep_data(data, info, gene_scale=True, print_means=False):
 
-    #Convert data to float
+    #Convert data to float and drop bad values
     data_scaled = data.astype(dtype='float')
+    data_scaled = data_scaled.dropna(axis=0)
+    data = data.dropna(axis=0)
 
     #gene normalization
     if gene_scale == True:
