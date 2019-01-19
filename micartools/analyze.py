@@ -31,6 +31,7 @@ import seaborn as sns
 sns.set(font='arial')
 jakes_cmap = sns.diverging_palette(212, 61, s=99, l=77, sep=1, n=16, center='dark') #Custom aesthetics
 from sklearn.decomposition import PCA
+import numpy as np
 
 """
 DESCRIPTION: Plots heatmap for prep_data formatted data
@@ -218,32 +219,35 @@ ASSUMPTIONS:
 
 FEATURES TO ADD:
 Allow for compatibility with adding labels for gene classes for plotting
+Option to order legend
 """
-def pca(data_scaled, info, palette, grouping='samples', gene_labels=False, ci=2, gene_list=None, save_fig=None, save_scree=None, n_components=10, dpi=600, bbox_inches='tight', title=None):
+def pca(data_scaled, info, palette, grouping='samples', gene_labels=False, ci=2, gene_list=None, save_fig=None, save_scree=None, n_components=10, dpi=600, bbox_inches='tight', title=None, return_pca=False, order_legend=None):
+
+    scaled = data_scaled.copy()
 
     if gene_list != None:
 
         #Check file formats and get dataframe with genes of interest
         if type(gene_list) is list:
-            data_scaled = data_scaled.reindex[gene_list]
+            scaled = scaled.reindex[gene_list]
 
         elif type(gene_list) is str:
             genes = custom_list(str(gene_list))
-            data_scaled = data_scaled.reindex[genes]
+            scaled = scaled.reindex[genes]
 
         else:
             print('Incorrect gene_list type provided')
             return
 
     #Clean data
-    data_scaled = data_scaled.dropna(axis=0)
+    scaled = scaled.dropna(axis=0)
 
     #Format data for sample-wise or gene-wise PCA analysis
     if str(grouping) == 'samples':
-        data_scaled = data_scaled.T
+        scaled = scaled.T
 
     elif str(grouping) == 'genes':
-        data_scaled = data_scaled
+        scaled = scaled
 
     else:
         print('Incorrect grouping variable provided')
@@ -251,14 +255,15 @@ def pca(data_scaled, info, palette, grouping='samples', gene_labels=False, ci=2,
 
     #Prep PCA
     pca = PCA(n_components=n_components)
-    pca_result = pca.fit_transform(data_scaled.values)
+    pca_result = pca.fit_transform(scaled.values)
 
     #Record PCs
     x = 1
     while x <= n_components:
         pc = 'PC' + str(x)
         col = x - 1
-        data_scaled[pc] = pca_result[:,col]
+        scaled[pc] = pca_result[:,col]
+        x += 1
 
     #Scree
     vari = 'Explained variation per principal component: {}'.format(np.round(pca.explained_variance_ratio_, decimals=4)*100)
@@ -283,10 +288,10 @@ def pca(data_scaled, info, palette, grouping='samples', gene_labels=False, ci=2,
         #Prep data_scaled by adding labels from info to column (samples are rows)
         labels = pd.Series(info[1].values,index=info[0]).to_dict()
 
-        data_scaled['label'] = data_scaled.index.to_series().map(labels)
+        scaled['label'] = scaled.index.to_series().map(labels)
 
         #Plot PC1 & PC2
-        df_pca = data_scaled[['PC1','PC2','label']] #Prepare pca data
+        df_pca = scaled[['PC1','PC2','label']] #Prepare pca data
         unique_labels = df_pca['label'].unique() #Gather unique labels
         pca_plot = sns.scatterplot(df_pca.PC1, df_pca.PC2, hue=df_pca['label'], palette=palette)
 
@@ -318,8 +323,10 @@ def pca(data_scaled, info, palette, grouping='samples', gene_labels=False, ci=2,
 
         # Put the legend out of the figure
         handles,labels = pca_plot.get_legend_handles_labels()
-        handles = [handles[1], handles[3], handles[2]]
-        labels = [labels[1],labels[3],labels[2]]
+
+        if order_legend != None:
+            handles = [handles[1], handles[3], handles[2]] #####
+            labels = [labels[1],labels[3],labels[2]] ######
 
         plt.legend(handles,labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
         plt.xlabel('PC1 (' + str(round(scree[0],2)) + '%)')
@@ -333,3 +340,6 @@ def pca(data_scaled, info, palette, grouping='samples', gene_labels=False, ci=2,
 
     else:
         print('This feature has not been implemented yet')
+
+    if return_pca is True:
+        return df_pca
