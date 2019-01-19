@@ -99,6 +99,8 @@ A probe collapser dictionary has been previously prepared using the prep_collaps
 def probe_collapse(data, dict):
 
     print('Presumably, a SettingwithCopyWarning error will now appear. Ignore this warning, the collapser is working properly.')
+    #This is a temporary fix to the SettingwithCopyWarning error
+    data_c = data.copy()
 
     #Get list of probes to find in df
     dict_list = list(dict.keys())
@@ -107,21 +109,21 @@ def probe_collapse(data, dict):
     #(in cases where only looking at certain genes, default: all genes)
     #column 'name' header for probes in these files
     try:
-        data = data[data['name'].isin(dict_list)]
+        data_c = data_c[data_c['name'].isin(dict_list)]
     except:
-        data['name'] = data.index
-        data = data[data['name'].isin(dict_list)]
+        data_c['name'] = data_c.index
+        data_c = data_c[data_c['name'].isin(dict_list)]
 
     #Map gene names in place of probes
     #Will set off SettingwithCopyWarning -- should be fine as we are replacing values in same column and it appears to change as expected
-    data['name'] = data['name'].map(dict)
+    data_c['name'] = data_c['name'].map(dict)
 
     #Set gene names as indices (allows for multiple indices with same name)
     #Needed to remove strings from df to allow for next step
-    data = data.set_index('name', drop=True)
+    data_c = data_c.set_index('name', drop=True)
 
     #force data to float
-    data_numeric = data.apply(pd.to_numeric)
+    data_numeric = data_c.apply(pd.to_numeric)
     #Reset indices to its own column to allow for sorting in next step
     data_numeric['name_sort'] =  data_numeric.index
 
