@@ -210,7 +210,7 @@ df_scaled, df_collapsed = mat.prep_df(df_collapsed, info)
 ASSUMPTIONS:
 Requires properly formatted df and info dataframes for MICARtools usage
 """
-def prep_df(data, info, gene_scale=True, print_means=False):
+def prep_data(data, info, gene_scale=True, print_means=False):
 
     #Convert data to float
     data_scaled = data.astype(dtype='float')
