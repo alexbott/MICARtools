@@ -22,7 +22,7 @@ this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 DEPENDENCIES
 """
-from .utils import custom_list
+from .utils import custom_list, genelist
 import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
@@ -145,8 +145,10 @@ def sample_overview(data_scaled, info , gene_list=None, order=None, palette=None
         #Check file formats
         if type(gene_list) is list:
             genes = gene_list
+
         elif type(gene_list) is str:
             genes = custom_list(str(gene_list))
+
         else:
             print('Incorrect gene_list type provided')
             return
