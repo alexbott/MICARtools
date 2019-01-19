@@ -74,6 +74,7 @@ def get_geo(geo_id):
     gse = GEOparse.get_GEO(geo=str(geo_id).upper())
     data = gse.pivot_samples('VALUE')
     del data.index.name
+
     return data
 
 """
@@ -142,11 +143,13 @@ def drop_samples(data, ids):
 
     #Check file formats
     if type(ids) is not list:
+
         return
 
     #Drop samples in list
     else:
         data_dropped = data.drop(ids, axis=1)
+
         return data_dropped
 
 """
@@ -166,6 +169,7 @@ def drop_label(data, info, label):
 
     #Check file formats
     if type(label) is not str:
+
         return
 
     #Drop samples by name (will grab from info df)
@@ -206,6 +210,7 @@ def keep_labels(data, info, label_list=None):
     else:
         #Check file formats
         if type(label_list) is not list:
+
             return
 
         #Keep samples by name (will grab from info df)
