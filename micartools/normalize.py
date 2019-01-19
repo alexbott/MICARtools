@@ -166,12 +166,13 @@ VARIABLES:
 data= Dataframe of microarray probe data
 axis= Axis where samples are found in the dataframe
 factor= Numeric value to scale samples by
+print_means= Print appropriate means that were scaled for verification
 
 USAGE:
 import micartools as mat
 df_norm = mat.sample_norm(df)
 """
-def sample_norm(data, axis=1, factor=1e6):
+def sample_norm(data, axis=1, factor=1e6, print_means=False):
 
     #Initialize axis variables based on user input
     if axis == 0:
@@ -184,7 +185,8 @@ def sample_norm(data, axis=1, factor=1e6):
     #Perform normalization
     data_norm = data.divide((data.sum(axis=axis_2) / float(factor)),axis=axis)
 
-    print(data_norm.mean(axis=axis_2))
+    if print_means == True:
+        print(data_norm.mean(axis=axis_2))
 
     return data_norm
 
@@ -196,31 +198,36 @@ Original dataframe is unformatted besides adding labels from info to the first r
 Formatted dataframe is scaled if option provided and dataframe is converted to float
 
 VARIABLES:
-df=
-info=
-gene_scale=
-label= Dataframe
+data= MICARtools formatted dataframe of expression values
+info= MICARtools formatted sample info dataframe
+gene_scale= Scale genes (rows) of data
+print_means= Print appropriate means that were scaled for verification
 
 USAGE:
+import micartools as mat
+df_scaled, df_collapsed = mat.prep_df(df_collapsed, info)
 
 ASSUMPTIONS:
 Requires properly formatted df and info dataframes for MICARtools usage
 """
-def prep_df(df, info, gene_scale=True):
+def prep_df(data, info, gene_scale=True, print_means=False):
 
     #Convert data to float
-    df_scaled = df.astype(dtype='float')
+    data_scaled = data.astype(dtype='float')
 
     #gene normalization
     if gene_scale == True:
-        df_scaled[df_scaled.columns] = preprocessing.scale(df_scaled[df_scaled.columns], axis=1)
+        data_scaled[data_scaled.columns] = preprocessing.scale(data_scaled[data_scaled.columns], axis=1)
+
+    if print_means == True:
+        print(data_scaled.mean(axis=1))
 
     #Map labels to samples
     labels = pd.Series(info[1].values,index=info[0]).to_dict()
-    df.loc['label'] = df.columns.map(labels.get)
+    data.loc['label'] = data.columns.map(labels.get)
 
     #Output collapsed dataframe
-    newIndex = ['label'] + [ind for ind in df.index if ind != 'label']
-    df = df.reindex(index=newIndex)
+    newIndex = ['label'] + [ind for ind in data.index if ind != 'label']
+    data = data.reindex(index=newIndex)
 
-    return df_scaled, df
+    return data_scaled, data
