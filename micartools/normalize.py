@@ -98,8 +98,7 @@ A probe collapser dictionary has been previously prepared using the prep_collaps
 """
 def probe_collapse(data, dict):
 
-    print('Presumably, a SettingwithCopyWarning error will now appear. Ignore this warning, the collapser is working properly.')
-    #This is a temporary fix to the SettingwithCopyWarning error
+    #This appears to fix the SettingwithCopyWarning error
     data_c = data.copy()
 
     #Get list of probes to find in df
