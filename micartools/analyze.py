@@ -141,7 +141,7 @@ title= Provide title for figure and saved file if save_fig option used
 ASSUMPTIONS:
 Data has been scaled and labeled with the MICARtools prep_data function
 """
-def sample_overview(data_scaled, info , gene_list=None, order=None, palette=None, save_fig=None, dpi=600, bbox_inches='tight', title=None):
+def sample_overview(data_scaled, info , gene_list=None, order=None, palette=None, save_fig=None, dpi=600, bbox_inches='tight', title=None, grid=False):
 
     #For some reason, function is returning data_scaled with labels, even though not specified to return anything
     #This solves the issue, but still throws the error
@@ -196,6 +196,9 @@ def sample_overview(data_scaled, info , gene_list=None, order=None, palette=None
     ax.set_xlabel('')
     ax.set_ylabel('Expression')
 
+    if grid == False:
+        ax.grid(False)
+
     #Save fig
     if save_fig is not None:
         if title is not None:
@@ -213,16 +216,44 @@ VARIABLES:
 palette= Dictionary of categories and their corresponding plotting colors
 n_components= Number of components to plot on the scree plot
 order_legend= List of integers in which to reorder samples in legend
-
+plotly_login= ['userid','api key']
 USAGE:
 
 ASSUMPTIONS:
+Plotly and api key generation, addition
 
 FEATURES TO ADD:
 Allow for compatibility with adding labels for gene classes for plotting
 Option to order legend
 """
-def pca(data_scaled, info, palette, grouping='samples', gene_labels=False, ci=2, gene_list=None, save_fig=None, save_scree=None, n_components=10, dpi=600, bbox_inches='tight', title=None, return_pca=False, order_legend=None):
+def pca(data_scaled, info, palette, grouping='samples', principle_components=[1,2], _3d_pca=False, gene_labels=False, ci=2,
+    gene_list=None, save_fig=None, scree_only=False, save_scree=None, n_components=10, dpi=600, bbox_inches='tight', title=None,
+    return_pca_dataframe=False, order_legend=None, grid=False, plotly_login=None, fig_size=(10,10)):
+
+    #Initial variable checks
+    if len(principle_components) != 2 and _3d_pca == False:
+        print('Incompatible options provided for principle_components and _3d_pca')
+        return
+
+    if plotly_login != None and _3d_pca == False:
+        print('Only provide plotly login for _3d_pca')
+        return
+
+    if _3d_pca == True:
+        fig_size=15
+        if principle_components == [1,2]:
+            principle_components = [1,2,3]
+        elif len(principle_components) != 3:
+            print('Incompatible options provided for principle_components and _3d_pca')
+            return
+        else:
+            print('Not sure if this will ever be triggered, but if it is need to check case')
+            return
+
+        if plotly_login != None and type(plotly_login) is not list:
+            print('Provide proper plotly login information in form of list')
+            print("['userid','api key']")
+            return
 
     scaled = data_scaled.copy()
 
@@ -262,8 +293,8 @@ def pca(data_scaled, info, palette, grouping='samples', gene_labels=False, ci=2,
     x = 1
     while x <= n_components:
         pc = 'PC' + str(x)
-        col = x - 1
-        scaled[pc] = pca_result[:,col]
+        component = x - 1
+        scaled[pc] = pca_result[:,component]
         x += 1
 
     #Scree
@@ -279,10 +310,16 @@ def pca(data_scaled, info, palette, grouping='samples', gene_labels=False, ci=2,
         ax.set(xlabel='Principal Component', ylabel='Proportion of Variance Explained', title='Scree Plot')
         plt.savefig(str(save_fig[:-4]) + '_scree.pdf', dpi=dpi, bbox_inches=bbox_inches)
 
+        if grid == False:
+            ax.grid(False)
+
         #Remove scree from memory to prevent plot bleeding
         del ax
         plt.close()
         plt.clf()
+
+        if scree_only == True:
+            return
 
     if gene_labels == False:
 
@@ -291,57 +328,208 @@ def pca(data_scaled, info, palette, grouping='samples', gene_labels=False, ci=2,
 
         scaled['label'] = scaled.index.to_series().map(labels)
 
-        #Plot PC1 & PC2
-        df_pca = scaled[['PC1','PC2','label']] #Prepare pca data
-        unique_labels = df_pca['label'].unique() #Gather unique labels
-        pca_plot = sns.scatterplot(df_pca.PC1, df_pca.PC2, hue=df_pca['label'], palette=palette)
+        #Plot PCa & PCb
+        pc_list = []
+        for p in principle_components:
+            pc_list.append('PC' + str(p))
 
-        #Add confidence intervals
-        for x in unique_labels:
+        pc_list.append('label')
 
-            #slice df into label specific datasets
-            df_slice = df_pca[df_pca['label'] == x]
+        df_pca = scaled[pc_list] #Prepare pca data
 
-            #make numpy array from label-specific dfs
-            x_slice = df_slice.PC1.values
-            y_slice = df_slice.PC2.values
+        if _3d_pca == False:
+            df_pca.columns = ['PCa', 'PCb', 'label']
+            unique_labels = df_pca['label'].unique() #Gather unique labels
+            pca_plot = sns.scatterplot(df_pca.PCa, df_pca.PCb, hue=df_pca['label'], palette=palette)
 
-            #pca maths
-            cov = np.cov(x_slice, y_slice)
-            lambda_, v = np.linalg.eig(cov)
-            theta = np.degrees(np.arctan2(*v[:,0][::-1]))
-            lambda_ = np.sqrt(lambda_)
+            #Add confidence intervals
+            for x in unique_labels:
 
-            #plot
-            pca_plot.add_patch(patches.Ellipse(xy=(np.mean(x_slice), np.mean(y_slice)),
-                              width=lambda_[0]*ci*2, height=lambda_[1]*ci*2,
-                              angle=theta,
-                              alpha=0.3, facecolor=palette[x], edgecolor='black', linewidth=1, linestyle='solid')
-                              )
+                #slice df into label specific datasets
+                df_slice = df_pca[df_pca['label'] == x]
 
-        # Put the legend out of the figure
-        handles,labels = pca_plot.get_legend_handles_labels()
+                #make numpy array from label-specific dfs
+                x_slice = df_slice.PCa.values
+                y_slice = df_slice.PCb.values
 
-        if order_legend != None:
-            if type(order_legend) is list:
-                plt.legend([handles[idx] for idx in order_legend],[labels[idx] for idx in order_legend], bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+                #pca maths
+                cov = np.cov(x_slice, y_slice)
+                lambda_, v = np.linalg.eig(cov)
+                theta = np.degrees(np.arctan2(*v[:,0][::-1]))
+                lambda_ = np.sqrt(lambda_)
+
+                #plot
+                pca_plot.add_patch(patches.Ellipse(xy=(np.mean(x_slice), np.mean(y_slice)),
+                                  width=lambda_[0]*ci*2, height=lambda_[1]*ci*2,
+                                  angle=theta,
+                                  alpha=0.3, facecolor=palette[x], edgecolor='black', linewidth=1, linestyle='solid')
+                                  )
+
+            # Put the legend out of the figure
+            handles,labels = pca_plot.get_legend_handles_labels()
+
+            if order_legend != None:
+                if type(order_legend) is list:
+                    plt.legend([handles[idx] for idx in order_legend],[labels[idx] for idx in order_legend], bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+                else:
+                    plt.legend(handles, labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+                    print('order_legend datatype is invalid -- plotting samples in default order...')
             else:
                 plt.legend(handles, labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-                print('order_legend datatype is invalid -- plotting samples in default order...')
+
+            plt.xlabel('PC' + str(principle_components[0]) + ' (' + str(round(scree[(principle_components[0] - 1)],2)) + '%)')
+            plt.ylabel('PC' + str(principle_components[1]) + ' (' + str(round(scree[(principle_components[1] - 1)],2)) + '%)')
+
+            if grid == False:
+                plt.grid(False)
+
+            if save_fig != None:
+
+                #Save plot
+                plt.title(str(title))
+                plt.savefig(str(save_fig), dpi=dpi, bbox_inches=bbox_inches)
+
+        elif _3d_pca == True:
+
+            if plotly_login != None:
+                import plotly
+                import plotly.plotly as py
+                import plotly.graph_objs as go
+                plotly.tools.set_credentials_file(username=str(plotly_login[0]), api_key=str(plotly_login[1]))
+
+                df_pca.columns = ['PCa', 'PCb', 'PCc', 'label']
+                unique_labels = df_pca['label'].unique() #Gather unique labels
+
+                pca0 = df_pca.loc[df_pca['label'] == unique_labels[0]]
+                pca1 = df_pca.loc[df_pca['label'] == unique_labels[1]]
+                pca2 = df_pca.loc[df_pca['label'] == unique_labels[2]]
+
+                x0 = pca0.PCa.values
+                y0 = pca0.PCb.values
+                z0 = pca0.PCc.values
+                trace0 = go.Scatter3d(
+                    x=x0,
+                    y=y0,
+                    z=z0,
+                    mode='markers',
+                    marker=dict(
+                        size=fig_size,
+                        line=dict(
+                            color=palette[unique_labels[0]],
+                            width=0.25
+                        ),
+                        opacity=0.8
+                    )
+                )
+
+                x1 = pca1.PCa.values
+                y1 = pca1.PCb.values
+                z1 = pca1.PCc.values
+                trace1 = go.Scatter3d(
+                    x=x1,
+                    y=y1,
+                    z=z1,
+                    mode='markers',
+                    marker=dict(
+                        size=fig_size,
+                        line=dict(
+                            color=palette[unique_labels[1]],
+                            width=0.25
+                        ),
+                        opacity=0.8
+                    )
+                )
+
+                x2 = pca2.PCa.values
+                y2 = pca2.PCb.values
+                z2 = pca2.PCc.values
+                trace2 = go.Scatter3d(
+                    x=x2,
+                    y=y2,
+                    z=z2,
+                    mode='markers',
+                    marker=dict(
+                        size=fig_size,
+                        line=dict(
+                            color=palette[unique_labels[2]],
+                            width=0.25
+                        ),
+                        opacity=0.8
+                    )
+                )
+
+                data = [trace0, trace1, trace2]
+                layout = go.Layout(
+                    margin=dict(
+                        l=0,
+                        r=0,
+                        b=0,
+                        t=0
+                    )
+                )
+                fig = go.Figure(data=data, layout=layout)
+
+                if title != None:
+                    py.iplot(fig, filename=title)
+                else:
+                    py.iplot(fig, filename='3d_pca')
+
+            else:
+
+                from mpl_toolkits.mplot3d import Axes3D
+
+                fig = plt.figure()
+                ax = Axes3D(fig)
+
+                df_pca.columns = ['PCa', 'PCb', 'PCc', 'label']
+                unique_labels = df_pca['label'].unique() #Gather unique labels
+
+                pca0 = df_pca.loc[df_pca['label'] == unique_labels[0]]
+                pca1 = df_pca.loc[df_pca['label'] == unique_labels[1]]
+                pca2 = df_pca.loc[df_pca['label'] == unique_labels[2]]
+
+                x0 = pca0.PCa.values
+                y0 = pca0.PCb.values
+                z0 = pca0.PCc.values
+                ax.scatter(x0, y0, z0, c=palette[unique_labels[0]])
+
+                x1 = pca1.PCa.values
+                y1 = pca1.PCb.values
+                z1 = pca1.PCc.values
+                ax.scatter(x1, y1, z1, c=palette[unique_labels[1]])
+
+                x2 = pca2.PCa.values
+                y2 = pca2.PCb.values
+                z2 = pca2.PCc.values
+                ax.scatter(x2, y2, z2, c=palette[unique_labels[2]])
+
+                ax.set_xlabel(str(pc_list[0]))
+                ax.set_ylabel(str(pc_list[1]))
+                ax.set_zlabel(str(pc_list[2]))
+                plt.show()
+
+                if save_fig != None:
+                    plt.savefig(str(save_fig), dpi=dpi, bbox_to_anchor=bbox_to_anchor)
+
         else:
-            plt.legend(handles, labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-
-        plt.xlabel('PC1 (' + str(round(scree[0],2)) + '%)')
-        plt.ylabel('PC2 (' + str(round(scree[1],2)) + '%)')
-
-        if save_fig != None:
-
-            #Save plot
-            plt.title(str(title))
-            plt.savefig(str(save_fig), dpi=dpi, bbox_inches=bbox_inches)
+            return
 
     else:
         print('This feature has not been implemented yet')
 
-    if return_pca is True:
+    if return_pca_dataframe is True:
         return df_pca
+
+"""
+
+"""
+def gene_overview():
+
+    print('')
+
+"""
+
+"""
+def linreg():
+
+    print('')
