@@ -212,6 +212,7 @@ METHODS: Confidence interval number to plot (i.e. 1 == CI1 == 68%, 2 == CI2 == 9
 VARIABLES:
 palette= Dictionary of categories and their corresponding plotting colors
 n_components= Number of components to plot on the scree plot
+order_legend= List of integers in which to reorder samples in legend
 
 USAGE:
 
@@ -296,7 +297,6 @@ def pca(data_scaled, info, palette, grouping='samples', gene_labels=False, ci=2,
         pca_plot = sns.scatterplot(df_pca.PC1, df_pca.PC2, hue=df_pca['label'], palette=palette)
 
         #Add confidence intervals
-        color_counter = 0
         for x in unique_labels:
 
             #slice df into label specific datasets
@@ -319,16 +319,18 @@ def pca(data_scaled, info, palette, grouping='samples', gene_labels=False, ci=2,
                               alpha=0.3, facecolor=palette[x], edgecolor='black', linewidth=1, linestyle='solid')
                               )
 
-            color_counter += 1
-
         # Put the legend out of the figure
         handles,labels = pca_plot.get_legend_handles_labels()
 
         if order_legend != None:
-            handles = [handles[1], handles[3], handles[2]] #####
-            labels = [labels[1],labels[3],labels[2]] ######
+            if type(order_legend) is list:
+                plt.legend([handles[idx] for idx in order_legend],[labels[idx] for idx in order_legend], bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+            else:
+                plt.legend(handles, labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+                print('order_legend datatype is invalid -- plotting samples in default order...')
+        else:
+            plt.legend(handles, labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
 
-        plt.legend(handles,labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
         plt.xlabel('PC1 (' + str(round(scree[0],2)) + '%)')
         plt.ylabel('PC2 (' + str(round(scree[1],2)) + '%)')
 
