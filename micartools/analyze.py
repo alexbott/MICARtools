@@ -132,7 +132,7 @@ VARIABLES:
 data_labeled= Unscaled dataframe with sample labels as created with the MICARtools prep_data function
 gene_list= List of genes (either as list or as .csv file path and name with list of genes) to plot (IMPORTANT: Gene names are case-sensitive)
 order= List of samples in order to plot
-palette= List of colors for samples in order of plotting
+palette= Dictionary of colors for samples
 save_fig= If not None, provide full file path, name, and extension to save the file as
 dpi= Set dpi of saved figure
 bbox_inches= Format saved figure (often useful for making sure no text is cut off)
@@ -208,15 +208,30 @@ def sample_overview(data_scaled, info , gene_list=None, order=None, palette=None
             plt.savefig(str(save_fig), dpi=dpi, bbox_inches=bbox_inches)
 
 """
-DESCRIPTION:
+DESCRIPTION: Plot a 2-D PCA with confidence intervals or a 3-D PCA with no confidence intervals
 
-METHODS: Confidence interval number to plot (i.e. 1 == CI1 == 68%, 2 == CI2 == 95%, 3 == CI3 == 99%,)
+METHODS: 3-D PCA -- option to output as interactive plot by providing plotly credentials, or as a static plot without these credentials (default)
 
 VARIABLES:
-palette= Dictionary of categories and their corresponding plotting colors
-n_components= Number of components to plot on the scree plot
-order_legend= List of integers in which to reorder samples in legend
-plotly_login= ['userid','api key']
+data_labeled= Unscaled dataframe with sample labels as created with the MICARtools prep_data function
+info= MICARtools formatted sample info dataframe
+palette= Dictionary of colors for samples
+grouping= Perform PCA sample-wise (default) or gene-wise (grouping='genes')
+gene_list= List of genes (either as list or as .csv file path and name with list of genes) to plot (IMPORTANT: Gene names are case-sensitive) (only functional when grouping='samples')
+gene_labels= Option for grouping='genes', not currently implemented
+ci= For 2-D PCA, confidence interval to display for each sample type (i.e. 1 == CI1 == 68%, 2 == CI2 == 95%, 3 == CI3 == 99%)
+principle_components= Principle components to plot (default: [1,2] for 2-D PCA, or [1,2,3] for 3-D PCA)
+n_components= Number of components to calculate in dataframe (more applicable if you want to perform a deeper survey of the principle components -- values returned if return_pca_dataframe=True)
+_3d_pca= Plot 3 principle components (default: False)
+plotly_login= ['userid','api key'], usage of this option creates a plotly interactive plot that can be viewed online using your login credentials
+title= Provide title for figure and saved file if save_fig option used
+save_fig= If not None, provide full file path, name, and extension to save the file as
+dpi= Set dpi of saved figure
+bbox_inches= Format saved figure (often useful for making sure no text is cut off)
+order_legend= List of integers to reorder samples in legend (i.e. if samples are displayed 1:Sample_A, 2:Sample_C, 3:Sample_B, provide the list [1,3,2]) (Not currently compatible with 3-D PCA options)
+grid= For non-plotly options, remove gridlines from plot
+fig_size= Option not used in function currently
+
 USAGE:
 
 ASSUMPTIONS:
@@ -226,9 +241,10 @@ FEATURES TO ADD:
 Allow for compatibility with adding labels for gene classes for plotting
 Option to order legend
 """
-def pca(data_scaled, info, palette, grouping='samples', principle_components=[1,2], _3d_pca=False, gene_labels=False, ci=2,
-    gene_list=None, save_fig=None, scree_only=False, save_scree=None, n_components=10, dpi=600, bbox_inches='tight', title=None,
-    return_pca_dataframe=False, order_legend=None, grid=False, plotly_login=None, fig_size=(10,10)):
+def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_labels=False,
+    ci=2, principle_components=[1,2], n_components=10, _3d_pca=False, plotly_login=None,
+    scree_only=False, save_scree=None, return_pca_dataframe=False,
+    title=None, save_fig=None, dpi=600, bbox_inches='tight', order_legend=None, grid=False, fig_size=(10,10)):
 
     #Initial variable checks
     if len(principle_components) != 2 and _3d_pca == False:
@@ -491,21 +507,23 @@ def pca(data_scaled, info, palette, grouping='samples', principle_components=[1,
                 x0 = pca0.PCa.values
                 y0 = pca0.PCb.values
                 z0 = pca0.PCc.values
-                ax.scatter(x0, y0, z0, c=palette[unique_labels[0]])
+                ax.scatter(x0, y0, z0, c=palette[unique_labels[0]], label=str(unique_labels[0]))
 
                 x1 = pca1.PCa.values
                 y1 = pca1.PCb.values
                 z1 = pca1.PCc.values
-                ax.scatter(x1, y1, z1, c=palette[unique_labels[1]])
+                ax.scatter(x1, y1, z1, c=palette[unique_labels[1]], label=str(unique_labels[1]))
 
                 x2 = pca2.PCa.values
                 y2 = pca2.PCb.values
                 z2 = pca2.PCc.values
-                ax.scatter(x2, y2, z2, c=palette[unique_labels[2]])
+                ax.scatter(x2, y2, z2, c=palette[unique_labels[2]], label=str(unique_labels[2]))
 
                 ax.set_xlabel(str(pc_list[0]))
                 ax.set_ylabel(str(pc_list[1]))
                 ax.set_zlabel(str(pc_list[2]))
+                ax.legend()
+                
                 plt.show()
 
                 if save_fig != None:
