@@ -143,7 +143,7 @@ title= Provide title for figure and saved file if save_fig option used
 ASSUMPTIONS:
 Data has been scaled and labeled with the MICARtools prep_data function
 """
-def sample_overview(data_scaled, info , gene_list=None, order=None, palette=None, save_fig=None, dpi=600, bbox_inches='tight', title=None, grid=False):
+def sample_overview(data_scaled, info , gene_list=None, order=None, palette=None, save_fig=None, dpi=600, bbox_inches='tight', title=None, grid=False, white_background=False):
 
     #For some reason, function is returning data_scaled with labels, even though not specified to return anything
     #This solves the issue, but still throws the error
@@ -260,7 +260,7 @@ Add options to vary marker size and opacity
 """
 def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_labels=False,
     ci=2, principle_components=[1,2], n_components=10, _3d_pca=False, plotly_login=None,
-    scree_only=False, save_scree=None, return_pca_dataframe=False, size=10,
+    scree_only=False, save_scree=None, return_pca_dataframe=False, size=10, white_background=False,
     title=None, save_fig=None, dpi=600, bbox_inches='tight', order_legend=None, grid=False, fig_size=(10,10)):
 
     #Initial variable checks
@@ -565,7 +565,7 @@ grid= Control plot gridlines (default: False)
 ASSUMPTIONS:
 data and info dataframes are properly formatted for MICARtools and any appropriate sample/gene normalizations have been performed
 """
-def gene_overview(data, info, gene_name, palette, order=None, save_fig=None, dpi=600, bbox_inches='tight', grid=False):
+def gene_overview(data, info, gene_name, palette, order=None, save_fig=None, dpi=600, bbox_inches='tight', grid=False, white_background= False):
 
     data_copy = data.copy()
 
@@ -584,7 +584,7 @@ def gene_overview(data, info, gene_name, palette, order=None, save_fig=None, dpi
 
     if grid == False:
         ax.grid(False)
-        
+
     fig = ax.get_figure()
 
     if save_fig != None:
@@ -635,7 +635,7 @@ def linreg(data, gene_name, save_file, delimiter=','):
 """
 If add_linreg used, title variable is void
 """
-def scatter(data, info, gene1, gene2, palette, add_linreg=False, order_legend=None, title=None, save_fig=None, dpi=600, bbox_to_anchor='tight', grid=False):
+def scatter(data, info, gene1, gene2, palette, add_linreg=False, order_legend=None, title=None, save_fig=None, dpi=600, bbox_to_anchor='tight', grid=False, white_background=False):
 
     data_c = data.copy()
 
