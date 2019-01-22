@@ -132,7 +132,7 @@ VARIABLES:
 data_labeled= Unscaled dataframe with sample labels as created with the MICARtools prep_data function
 gene_list= List of genes (either as list or as .csv file path and name with list of genes) to plot (IMPORTANT: Gene names are case-sensitive)
 order= List of samples in order to plot
-palette= Dictionary of colors for samples
+palette= Dictionary of matplotlib compatible colors for samples
 save_fig= If not None, provide full file path, name, and extension to save the file as
 dpi= Set dpi of saved figure
 bbox_inches= Format saved figure (often useful for making sure no text is cut off)
@@ -215,7 +215,7 @@ METHODS: 3-D PCA -- option to output as interactive plot by providing plotly cre
 VARIABLES:
 data_labeled= Unscaled dataframe with sample labels as created with the MICARtools prep_data function -- can be a dataframe prepared using the prep_data() function or log_scale() function
 info= MICARtools formatted sample info dataframe
-palette= Dictionary of colors for samples
+palette= Dictionary of matplotlib compatible colors for samples; for plotly 3-D PCA,
 grouping= Perform PCA sample-wise (default) or gene-wise (grouping='genes')
 gene_list= List of genes (either as list or as .csv file path and name with list of genes) to plot (IMPORTANT: Gene names are case-sensitive) (only functional when grouping='samples')
 gene_labels= Option for grouping='genes', not currently implemented
@@ -434,10 +434,7 @@ def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_lab
                     mode='markers',
                     marker=dict(
                         size=fig_size,
-                        line=dict(
-                            color=palette[unique_labels[0]],
-                            width=0.25
-                        ),
+                        color=palette[unique_labels[0]],
                         opacity=0.8
                     )
                 )
@@ -453,10 +450,7 @@ def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_lab
                     mode='markers',
                     marker=dict(
                         size=fig_size,
-                        line=dict(
-                            color=palette[unique_labels[1]],
-                            width=0.25
-                        ),
+                        color=palette[unique_labels[1]],
                         opacity=0.8
                     )
                 )
@@ -472,10 +466,7 @@ def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_lab
                     mode='markers',
                     marker=dict(
                         size=fig_size,
-                        line=dict(
-                            color=palette[unique_labels[2]],
-                            width=0.25
-                        ),
+                        color=palette[unique_labels[2]],
                         opacity=0.8
                     )
                 )
@@ -551,7 +542,7 @@ VARIABLES:
 data= Dataframe (can be sample-normalized, prep_data() scaled, or log_scale() scaled)
 info= MICARtools formatted sample info dataframe
 gene_name= Name of gene to plot
-palette= Dictionary of colors for samples
+palette= Dictionary of matplotlib compatible colors for samples
 order= List of samples in order to plot
 save_fig= If not None, provide full file path, name, and extension to save the file as
 dpi= Set dpi of saved figure
