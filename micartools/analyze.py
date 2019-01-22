@@ -42,8 +42,8 @@ METHODS: We use centroid method as default as it looks at the gene set for each 
 
 VARIABLES:
 data_scaled= Scaled dataframe as created with the MICARtools prep_data function
-data_labeled= Unscaled dataframe with sample labels as created with the MICARtools prep_data function
-col_colors= Dictionary of labels and colors for plotting, or valid seaborns.clustermap col_colors option
+info= MICARtools formatted info matrix
+palette= Dictionary of labels and colors for plotting, or valid seaborns.clustermap col_colors option
 gene_list= List of genes (either as list or as .csv file path and name with list of genes) to plot (IMPORTANT: Gene names are case-sensitive)
 save_fig= If not None, provide full file path, name, and extension to save the file as
 dpi= Set dpi of saved figure
@@ -63,25 +63,34 @@ mat.heatmap(data_scaled, data_labeled, color_dict=color_dict, gene_list='/path/t
 ASSUMPTIONS:
 Data has been scaled and labeled with the MICARtools prep_data function
 """
-def heatmap(data_scaled, data_labeled, col_colors=None, gene_list=None, save_fig=None, dpi=600, bbox_inches='tight', font_scale=.8,
+def heatmap(data_scaled, info, palette=None, gene_list=None, save_fig=None, dpi=600, bbox_inches='tight', font_scale=.8,
     cmap=jakes_cmap, center=0, metric='euclidean', method='centroid', xticklabels=True, linewidths=.03, linecolor='#DCDCDC', col_cluster=True,
     row_cluster=False, figsize=(16,6.5)):
 
-    #Set colors for plotting
-    if type(col_colors) is dict:
-        labels = data_labeled.loc['label']
-        color_map = labels.map(col_colors)
+    scaled = data_scaled.copy()
 
+    #Set colors for plotting
+    if palette != None:
+        if type(palette) is dict:
+            info = info.T
+            info.columns = info.iloc[0]
+            info = info.reindex(info.index.drop(0))
+            labels = info.iloc[0]
+            color_map = labels.map(palette)
+
+        else:
+            print('Error: a dictionary was not provided as palette')
+            return
 
     #Custom panel heatmap
     if gene_list != None:
 
         #Check file formats
         if type(gene_list) is list:
-            custom_data = data_scaled.loc[gene_list]
+            custom_data = data_scaled.reindex(labels=gene_list, axis=0)
         elif type(gene_list) is str:
             genes = custom_list(str(gene_list))
-            custom_data = data_scaled.loc[genes]
+            custom_data = data_scaled.reindex(labels=genes, axis=0)
         else:
             print('Incorrect gene_list type provided')
             return
@@ -95,7 +104,7 @@ def heatmap(data_scaled, data_labeled, col_colors=None, gene_list=None, save_fig
 
     #Generate clustermap
     sns.set(font_scale=float(font_scale))
-    if col_colors is None:
+    if palette is None:
         sns.clustermap(plot_data,
                         cmap=cmap,
                         center=float(center),
@@ -143,11 +152,15 @@ title= Provide title for figure and saved file if save_fig option used
 ASSUMPTIONS:
 Data has been scaled and labeled with the MICARtools prep_data function
 """
-def sample_overview(data_scaled, info , gene_list=None, order=None, palette=None, save_fig=None, dpi=600, bbox_inches='tight', title=None, grid=False, white_background=False):
+def sample_overview(data_scaled, info , gene_list=None, order=None, palette=None, save_fig=None, dpi=600, bbox_inches='tight', title=None, grid=False, whitegrid=False):
+
+    if whitegrid == True:
+        sns.set_style("whitegrid")
 
     #For some reason, function is returning data_scaled with labels, even though not specified to return anything
     #This solves the issue, but still throws the error
     scaled = data_scaled.copy()
+    scaled = scaled.dropna(axis=0)
 
     #Prep data_scaled by adding labels from info
     labels = pd.Series(info[1].values,index=info[0]).to_dict()
@@ -209,6 +222,9 @@ def sample_overview(data_scaled, info , gene_list=None, order=None, palette=None
             ax.set_title(str(title))
             plt.savefig(str(save_fig), dpi=dpi, bbox_inches=bbox_inches)
 
+    #Reset aesthetics
+    sns.set_style("darkgrid")
+
 """
 DESCRIPTION: Plot a 2-D PCA with confidence intervals or a 3-D PCA with no confidence intervals
 
@@ -260,8 +276,11 @@ Add options to vary marker size and opacity
 """
 def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_labels=False,
     ci=2, principle_components=[1,2], n_components=10, _3d_pca=False, plotly_login=None,
-    scree_only=False, save_scree=None, return_pca_dataframe=False, size=10, white_background=False,
+    scree_only=False, save_scree=None, return_pca_dataframe=False, size=10, whitegrid=False,
     title=None, save_fig=None, dpi=600, bbox_inches='tight', order_legend=None, grid=False, fig_size=(10,10)):
+
+    if whitegrid == True:
+        sns.set_style("whitegrid")
 
     #Initial variable checks
     if len(principle_components) != 2 and _3d_pca == False:
@@ -288,16 +307,18 @@ def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_lab
             return
 
     scaled = data_scaled.copy()
+    scaled = scaled.dropna(axis=0)
 
     if gene_list != None:
 
         #Check file formats and get dataframe with genes of interest
         if type(gene_list) is list:
-            scaled = scaled.reindex[gene_list]
+            scaled = scaled.reindex(labels=gene_list, axis=0)
+
 
         elif type(gene_list) is str:
             genes = custom_list(str(gene_list))
-            scaled = scaled.reindex[genes]
+            scaled = scaled.reindex(labels=genes, axis=0)
 
         else:
             print('Incorrect gene_list type provided')
@@ -548,6 +569,9 @@ def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_lab
     if return_pca_dataframe is True:
         return df_pca
 
+    #Reset aesthetics
+    sns.set_style("darkgrid")
+
 """
 DESCRIPTION: Plot boxplot overlaid with swarmplot of each sample type's gene expression for the given gene
 
@@ -565,9 +589,13 @@ grid= Control plot gridlines (default: False)
 ASSUMPTIONS:
 data and info dataframes are properly formatted for MICARtools and any appropriate sample/gene normalizations have been performed
 """
-def gene_overview(data, info, gene_name, palette, order=None, save_fig=None, dpi=600, bbox_inches='tight', grid=False, white_background= False):
+def gene_overview(data, info, gene_name, palette, order=None, save_fig=None, dpi=600, bbox_inches='tight', grid=False, whitegrid= False):
+
+    if whitegrid == True:
+        sns.set_style("whitegrid")
 
     data_copy = data.copy()
+    data_copy = data_copy.dropna(axis=0)
 
     #Prep data_scaled by adding labels from info to column (samples are rows)
     labels = pd.Series(info[1].values,index=info[0]).to_dict()
@@ -590,6 +618,9 @@ def gene_overview(data, info, gene_name, palette, order=None, save_fig=None, dpi
     if save_fig != None:
         fig.savefig(str(save_fig), dpi=dpi, bbox_to_anchor=bbox_to_anchor)
 
+    #Reset plot aesthetics
+    sns.set_style("darkgrid")
+
 """
 DESCRIPTION: Calculates r, r^2 values, and p-values for every gene against target gene for given dataset
 
@@ -606,6 +637,7 @@ data should not contain labels
 def linreg(data, gene_name, save_file, delimiter=','):
 
     df_corr = data.copy()
+    df_corr = df_corr.dropna(axis=0)
 
     #Gene expression array for gene of interest
     interest = df_corr.loc[str(gene_name)].values.tolist()
@@ -635,16 +667,20 @@ def linreg(data, gene_name, save_file, delimiter=','):
 """
 If add_linreg used, title variable is void
 """
-def scatter(data, info, gene1, gene2, palette, add_linreg=False, order_legend=None, title=None, save_fig=None, dpi=600, bbox_to_anchor='tight', grid=False, white_background=False):
+def scatter(data, info, gene1, gene2, palette, add_linreg=False, order_legend=None, title=None, save_fig=None, dpi=600, bbox_to_anchor='tight', grid=False, whitegrid=False, alpha=1):
+
+    if whitegrid == True:
+        sns.set_style("whitegrid")
 
     data_c = data.copy()
+    data_c = data_c.dropna(axis=0)
 
     #Prep data_scaled by adding labels from info
     labels = pd.Series(info[1].values,index=info[0]).to_dict()
     data_c.loc['label'] = data_c.columns.map(labels.get)
     data_c = data_c.T
 
-    ax = sns.scatterplot(data_c[str(gene1)], data_c[str(gene2)], hue=data_c['label'], palette=palette)
+    ax = sns.scatterplot(data_c[str(gene1)], data_c[str(gene2)], hue=data_c['label'], palette=palette, alpha=alpha)
 
     if add_linreg == True:
 
@@ -663,6 +699,8 @@ def scatter(data, info, gene1, gene2, palette, add_linreg=False, order_legend=No
         x = np.linspace(data_c[str(gene1)].min(), data_c[str(gene1)].max(), 100)
         y = (slope * x) + intercept
         ax.plot(x, y, '-k')
+
+
 
     # Put the legend out of the figure
     handles,labels = ax.get_legend_handles_labels()
@@ -688,12 +726,123 @@ def scatter(data, info, gene1, gene2, palette, add_linreg=False, order_legend=No
     if save_fig != None:
         plt.savefig(str(save_fig), dpi=dpi, bbox_inches=bbox_inches)
 
-"""
+    #Revert to default styles
+    sns.set_style('darkgrid')
 
 """
-def volcano():
+DESCRIPTION:
 
-    print('')
+VARIABLES:
+data= Sample-normalized, MICARtools-formatted data -- should NOT be gene-normalized
+info= MICARtools formatted sample info dataframe
+label_comp= Sample label to compare against base
+label_base= Sample label to use as base for comparison
+highlight_genes= If provided with a list, or a file path and name to a .csv-type series of gene names, will highlight genes of interest in a different color (Gene names are case-sensitive)
+highlight_color= Color to use for highlighted genes
+y_threshold= -log10(P-Value) threshold to use to identify significant hits. Will create a dotted line on the plot and use to pull significant hits if return_threshold_hits is not None
+x_threshold= log2(Fold Change) threshold to use to identify significant hits. Will take the positive and negative of the number. Will create a dotted line on the plot and use to pull significant hits if return_threshold_hits is not None
+return_threshold_hits= Will return a .csv-type matrix of significant genes/hits to the file path and name specified
+return_threshold_hits_delimiter= Delimiter to use in exporting return_threshold_hits
+save_fig= If not None, provide full file path, name, and extension to save the file as
+dpi= Set dpi of saved figure
+bbox_inches= Format saved figure (often useful for making sure no text is cut off)
+
+LIMITATIONS:
+Will only perform comparison between 2 sample types
+
+ASSUMPTIONS:
+data should ONLY be sample normalized. If using a previous function that returned a modified original
+y_threshold must be a postive integer or float
+"""
+def volcano(data, info, label_comp, label_base, highlight_genes=None, highlight_color='DarkRed', alpha=1, alpha_highlights=1,
+            y_threshold=10, x_threshold=1, return_threshold_hits=False, export_threshold_hits=None, export_threshold_hits_delimiter=',',
+            save_fig=None, dpi=600, bbox_inches='tight', whitegrid=False):
+
+    if whitegrid == True:
+        sns.set_style("whitegrid")
+
+    #Prep dataframes
+    data_c = data.copy()
+    data_c = data_c.dropna(axis=0)
+    info_c = info.copy()
+
+    #Add labels to column name
+    if 'label' in data_c.index:
+        print('yep')
+        data_c = data_c.drop(labels='label',axis=0)
+
+    info_c["id"] = info_c[0] + '_' + info_c[1]
+    labels = pd.Series(info_c['id'].values,index=info_c[0]).to_dict()
+    data_c = data_c.rename(labels, axis='columns')
+
+    # Average every by cell line
+    data_c['log2 Fold Change'] = np.log2((data_c.filter(regex=str(label_comp)).mean(axis=1)) / \
+                                      (data_c.filter(regex=str(label_base)).mean(axis=1)))
+    data_c['-log10 P-Value'] = ''
+
+    # Calculate p-value using 1-way ANOVA with replicates and append to df_oxsm_volc
+    for row in data_c.iterrows():
+        index, data = row
+        comp_row = data_c.loc[index].filter(regex=str(label_comp)).values.tolist()
+        ground_row = data_c.loc[index].filter(regex=str(label_base)).values.tolist()
+
+        # Append p_value to df_oxsm_volc
+        statistic, p_value = stats.f_oneway(comp_row, ground_row)
+        data_c.loc[index,'-log10 P-Value'] = float(-1 * (np.log10(p_value)))
+
+    #Plot all genes
+    ax = sns.scatterplot(x='log2 Fold Change', y='-log10 P-Value', data=data_c, color='Black', alpha=alpha)
+
+    #Plot selected genes if user-specified
+    if highlight_genes != None:
+        if type(highlight_genes) is list:
+            df_genes = data_c.reindex(labels=highlight_genes, axis=0)
+        elif type(highlight_genes) is str:
+            genes = custom_list(str(highlight_genes))
+            df_genes = data_c.reindex(labels=genes, axis=0)
+        else:
+            print('Invalid highlight_genes option provided.')
+            return
+
+        ax = sns.scatterplot(x='log2 Fold Change', y='-log10 P-Value', data=df_genes, color=str(highlight_color), alpha=alpha_highlights)
+
+    #Plot thresholds
+    if y_threshold != None and type(y_threshold) is int or type(y_threshold) is float:
+        if y_threshold > 0:
+            ax.axhline(y_threshold, ls='--', color='b')
+        else:
+            print('Invalid y_threshold provided, must be a positive integer or float (Y-axis threshold will not be plotted)')
+    else:
+        print('Invalid y_threshold provided, must be a positive integer or float (Y-axis threshold will not be plotted)')
+
+    if x_threshold != None and type(x_threshold) is int or type(x_threshold) is float:
+        ax.axvline(-x_threshold, ls='--', color='b')
+        ax.axvline(x_threshold, ls='--', color='b')
+    else:
+        print('Invalid x_threshold provided, must be an integer or float (X-axis threshold will not be plotted)')
+
+    #Set labels and other plotting aesthetics
+    ax.set_ylabel('-log$_1$$_0$(P-Value)')
+    ax.set_xlabel('-log$_2$(Fold Change)')
+    plt.grid(False)
+
+    #Save plot if user-specified
+    if save_fig != None:
+        plt.savefig(str(save_fig), dpi=dpi, bbox_inches=bbox_inches)
+
+    #Save hits if user-specified
+    if export_threshold_hits != None or return_threshold_hits == True:
+        df_c = data_c[['log2 Fold Change', '-log10 P-Value']].copy()
+        df_up = df_c.loc[(df_c['log2 Fold Change'] > x_threshold) & (df_c['-log10 P-Value'] > y_threshold)] #get upregulated hits
+        df_down = df_c.loc[(df_c['log2 Fold Change'] < -x_threshold) & (df_c['-log10 P-Value'] > y_threshold)] #get downregulated hits
+        thresh_hits = df_up.append(df_down) #append hits tables
+        if export_threshold_hits != None:
+            thresh_hits.to_csv(str(return_threshold_hits), sep=export_threshold_hits_delimiter) #export table for user
+        else:
+            return thresh_hits
+
+    #Revert to default styles
+    sns.set_style('darkgrid')
 
 """
 
