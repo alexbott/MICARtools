@@ -23,6 +23,7 @@ this program.  If not, see <https://www.gnu.org/licenses/>.
 DEPENDENCIES
 """
 import pandas as pd
+import numpy as np
 from sklearn import preprocessing
 from .utils import custom_list
 
@@ -234,3 +235,24 @@ def prep_data(data, info, gene_scale=True, print_means=False):
     data = data.reindex(index=newIndex)
 
     return data_scaled, data
+
+"""
+DESCRIPTION: Log-scale a sample-normalized dataframe
+
+VARIABLES:
+data= Sample normalized, MICARtools-formated dataframe
+log_base= Log-scale to normalize data with (Options: 2 or 10)
+
+ASSUMPTIONS:
+Requires a properly formatted dataframe for MICARtools usage where samples are normalized
+"""
+def log_scale(data, log_base=10):
+
+    if log_base == 10:
+        data_log = np.log10(data)
+    elif log_base == 2:
+        data_log = np.log2(data)
+    else:
+        print('Invalid log_base option provided')
+
+    return data_log
