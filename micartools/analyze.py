@@ -213,7 +213,7 @@ DESCRIPTION: Plot a 2-D PCA with confidence intervals or a 3-D PCA with no confi
 METHODS: 3-D PCA -- option to output as interactive plot by providing plotly credentials, or as a static plot without these credentials (default)
 
 VARIABLES:
-data_labeled= Unscaled dataframe with sample labels as created with the MICARtools prep_data function
+data_labeled= Unscaled dataframe with sample labels as created with the MICARtools prep_data function -- can be a dataframe prepared using the prep_data() function or log_scale() function
 info= MICARtools formatted sample info dataframe
 palette= Dictionary of colors for samples
 grouping= Perform PCA sample-wise (default) or gene-wise (grouping='genes')
@@ -236,6 +236,7 @@ USAGE:
 
 ASSUMPTIONS:
 Plotly and api key generation, addition
+Data has been scaled and labeled with the MICARtools prep_data function
 
 FEATURES TO ADD:
 Allow for compatibility with adding labels for gene classes for plotting
@@ -523,7 +524,7 @@ def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_lab
                 ax.set_ylabel(str(pc_list[1]))
                 ax.set_zlabel(str(pc_list[2]))
                 ax.legend()
-                
+
                 plt.show()
 
                 if save_fig != None:
@@ -539,11 +540,40 @@ def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_lab
         return df_pca
 
 """
+DESCRIPTION: Plot boxplot overlaid with swarmplot of each sample type's gene expression for the given gene
+
+VARIABLES:
+data= Dataframe (can be sample-normalized, prep_data() scaled, or log_scale() scaled)
+info= MICARtools formatted sample info dataframe
+gene_name= Name of gene to plot
+palette= Dictionary of colors for samples
+order= List of samples in order to plot
+save_fig= If not None, provide full file path, name, and extension to save the file as
+dpi= Set dpi of saved figure
+bbox_inches= Format saved figure (often useful for making sure no text is cut off)
+
+ASSUMPTIONS:
 
 """
-def gene_overview():
+def gene_overview(data, info, gene_name, palette, order=None, save_fig=None, dpi=600, bbox_inches='tight'):
 
-    print('')
+    data_copy = data.copy()
+
+    #Prep data_scaled by adding labels from info to column (samples are rows)
+    labels = pd.Series(info[1].values,index=info[0]).to_dict()
+
+    data_copy = data_copy.T
+    data_copy['label'] = data_copy.index.to_series().map(labels)
+
+    gene_df = data_copy[[str(gene_name), 'label']]
+
+    ax = sns.catplot(x='label', y=str(gene_name), data=gene_df, color='black', order=order, kind='swarm') #Swarm plot
+    ax = sns.boxplot(x='label', y=str(gene_name), data=gene_df, width =0.3, fliersize=0, order=order, palette=palette) #Boxplot, fliersize=0 removes outlier diamonds from sns
+    plt.setp(ax.collections, sizes=[12]) #Resize markers for catplot
+    fig = ax.get_figure()
+
+    if save_fig != None:
+        fig.savefig(str(save_fig), dpi=dpi, bbox_to_anchor=bbox_to_anchor)
 
 """
 
