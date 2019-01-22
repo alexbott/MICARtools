@@ -241,6 +241,8 @@ Data has been scaled and labeled with the MICARtools prep_data function
 FEATURES TO ADD:
 Allow for compatibility with adding labels for gene classes for plotting
 Option to order legend
+Move legend outside plot
+Add options to vary marker size and opacity
 """
 def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_labels=False,
     ci=2, principle_components=[1,2], n_components=10, _3d_pca=False, plotly_login=None,
@@ -428,6 +430,7 @@ def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_lab
                     x=x0,
                     y=y0,
                     z=z0,
+                    name=unique_labels[0],
                     mode='markers',
                     marker=dict(
                         size=fig_size,
@@ -446,6 +449,7 @@ def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_lab
                     x=x1,
                     y=y1,
                     z=z1,
+                    name=unique_labels[1],
                     mode='markers',
                     marker=dict(
                         size=fig_size,
@@ -464,6 +468,7 @@ def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_lab
                     x=x2,
                     y=y2,
                     z=z2,
+                    name=unique_labels[2],
                     mode='markers',
                     marker=dict(
                         size=fig_size,
@@ -566,6 +571,7 @@ def gene_overview(data, info, gene_name, palette, order=None, save_fig=None, dpi
     data_copy['label'] = data_copy.index.to_series().map(labels)
 
     gene_df = data_copy[[str(gene_name), 'label']]
+    gene_df[[str(gene_name)]] = gene_df[[str(gene_name)]].apply(pd.to_numeric, errors='coerce')
 
     ax = sns.catplot(x='label', y=str(gene_name), data=gene_df, color='black', order=order, kind='swarm') #Swarm plot
     ax = sns.boxplot(x='label', y=str(gene_name), data=gene_df, width =0.3, fliersize=0, order=order, palette=palette) #Boxplot, fliersize=0 removes outlier diamonds from sns
@@ -579,5 +585,33 @@ def gene_overview(data, info, gene_name, palette, order=None, save_fig=None, dpi
 
 """
 def linreg():
+
+    print('')
+
+"""
+
+"""
+def linreg():
+
+    print('')
+
+"""
+
+"""
+def scatter():
+
+    print('')
+
+"""
+
+"""
+def volcano():
+
+    print('')
+
+"""
+
+"""
+def violin():
 
     print('')
