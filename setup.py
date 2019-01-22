@@ -40,7 +40,14 @@ setup(
     zip_safe = False,
     install_requires=[
           'GEOparse',
-          'pandas'
+          'pandas',
+          'scipy',
+          'seaborns',
+          'plotly',
+          'matplotlib',
+          'sklearn',
+          'mpl_toolkits',
+          
       ],
 
     classifiers=[
