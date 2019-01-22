@@ -32,6 +32,8 @@ sns.set(font='arial')
 jakes_cmap = sns.diverging_palette(212, 61, s=99, l=77, sep=1, n=16, center='dark') #Custom aesthetics
 from sklearn.decomposition import PCA
 import numpy as np
+import scipy.stats as stats
+from scipy.stats import linregress
 
 """
 DESCRIPTION: Plots heatmap for prep_data formatted data
@@ -231,6 +233,18 @@ bbox_inches= Format saved figure (often useful for making sure no text is cut of
 order_legend= List of integers to reorder samples in legend (i.e. if samples are displayed 1:Sample_A, 2:Sample_C, 3:Sample_B, provide the list [1,3,2]) (Not currently compatible with 3-D PCA options)
 grid= For non-plotly options, remove gridlines from plot
 fig_size= Option not used in function currently
+size= Marker size
+
+palette examples:
+colors = {'adenocarcinoma': (0.5725490196078431, 0.5843137254901961, 0.5686274509803921),
+        'adenoma': (0.8705882352941177, 0.5607843137254902, 0.0196078431372549),
+        'normal': (0.00784313725490196, 0.6196078431372549, 0.45098039215686275)}
+colors = {'adenocarcinoma': 'gray',
+        'adenoma': 'orange',
+        'normal': 'green'}
+colors = {'adenocarcinoma': '#59656d',
+        'adenoma': '#f0833a',
+        'normal': '#0a5f38'}
 
 USAGE:
 
@@ -246,7 +260,7 @@ Add options to vary marker size and opacity
 """
 def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_labels=False,
     ci=2, principle_components=[1,2], n_components=10, _3d_pca=False, plotly_login=None,
-    scree_only=False, save_scree=None, return_pca_dataframe=False,
+    scree_only=False, save_scree=None, return_pca_dataframe=False, size=10,
     title=None, save_fig=None, dpi=600, bbox_inches='tight', order_legend=None, grid=False, fig_size=(10,10)):
 
     #Initial variable checks
@@ -259,7 +273,6 @@ def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_lab
         return
 
     if _3d_pca == True:
-        fig_size=15
         if principle_components == [1,2]:
             principle_components = [1,2,3]
         elif len(principle_components) != 3:
@@ -433,7 +446,7 @@ def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_lab
                     name=unique_labels[0],
                     mode='markers',
                     marker=dict(
-                        size=fig_size,
+                        size=size,
                         color=palette[unique_labels[0]],
                         opacity=0.8
                     )
@@ -449,7 +462,7 @@ def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_lab
                     name=unique_labels[1],
                     mode='markers',
                     marker=dict(
-                        size=fig_size,
+                        size=size,
                         color=palette[unique_labels[1]],
                         opacity=0.8
                     )
@@ -465,7 +478,7 @@ def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_lab
                     name=unique_labels[2],
                     mode='markers',
                     marker=dict(
-                        size=fig_size,
+                        size=size,
                         color=palette[unique_labels[2]],
                         opacity=0.8
                     )
@@ -547,11 +560,12 @@ order= List of samples in order to plot
 save_fig= If not None, provide full file path, name, and extension to save the file as
 dpi= Set dpi of saved figure
 bbox_inches= Format saved figure (often useful for making sure no text is cut off)
+grid= Control plot gridlines (default: False)
 
 ASSUMPTIONS:
-
+data and info dataframes are properly formatted for MICARtools and any appropriate sample/gene normalizations have been performed
 """
-def gene_overview(data, info, gene_name, palette, order=None, save_fig=None, dpi=600, bbox_inches='tight'):
+def gene_overview(data, info, gene_name, palette, order=None, save_fig=None, dpi=600, bbox_inches='tight', grid=False):
 
     data_copy = data.copy()
 
@@ -567,31 +581,112 @@ def gene_overview(data, info, gene_name, palette, order=None, save_fig=None, dpi
     ax = sns.catplot(x='label', y=str(gene_name), data=gene_df, color='black', order=order, kind='swarm') #Swarm plot
     ax = sns.boxplot(x='label', y=str(gene_name), data=gene_df, width =0.3, fliersize=0, order=order, palette=palette) #Boxplot, fliersize=0 removes outlier diamonds from sns
     plt.setp(ax.collections, sizes=[12]) #Resize markers for catplot
+
+    if grid == False:
+        ax.grid(False)
+        
     fig = ax.get_figure()
 
     if save_fig != None:
         fig.savefig(str(save_fig), dpi=dpi, bbox_to_anchor=bbox_to_anchor)
 
 """
+DESCRIPTION: Calculates r, r^2 values, and p-values for every gene against target gene for given dataset
+
+VARIABLES:
+data= Dataframe of expression data (samples are columns, genes are rows)
+gene_name= Gene to run correlations against
+save_file= File path and name to save correlations matrix with
+delimiter= Delimiter to use for save_file
+
+ASSUMPTIONS:
+data dataframes is properly formatted for MICARtools, sample scaling required but gene scaling is not necessary
+data should not contain labels
+"""
+def linreg(data, gene_name, save_file, delimiter=','):
+
+    df_corr = data.copy()
+
+    #Gene expression array for gene of interest
+    interest = df_corr.loc[str(gene_name)].values.tolist()
+    interest = np.array(interest).astype(np.float)
+    interest = np.ndarray.tolist(interest)
+
+    #Get expression arrays for all genes and run linear regression, save values to matrix
+    lm_interest=[]
+
+    for row in df_corr.iterrows():
+        index, data = row
+        gene = df_corr.loc[index].values.tolist()
+        gene = np.array(gene).astype(np.float)
+        gene = np.ndarray.tolist(gene)
+
+        if len(gene) is not len(interest):
+            continue
+        else:
+            slope, intercept, r_value, p_value, std_err = linregress(gene, interest)
+            lm_interest.append([index, slope, intercept, r_value, (r_value**2), p_value, std_err])
+
+    df_lm_interest = pd.DataFrame(lm_interest, columns=['gene', 'slope', 'intercept', 'r_value', 'r_squared', 'p_value', 'std_err'])
+
+    # Save linear modeling metrics to .csv
+    df_lm_interest.to_csv(str(save_file), sep=delimiter)
 
 """
-def linreg():
-
-    print('')
-
+If add_linreg used, title variable is void
 """
+def scatter(data, info, gene1, gene2, palette, add_linreg=False, order_legend=None, title=None, save_fig=None, dpi=600, bbox_to_anchor='tight', grid=False):
 
-"""
-def linreg():
+    data_c = data.copy()
 
-    print('')
+    #Prep data_scaled by adding labels from info
+    labels = pd.Series(info[1].values,index=info[0]).to_dict()
+    data_c.loc['label'] = data_c.columns.map(labels.get)
+    data_c = data_c.T
 
-"""
+    ax = sns.scatterplot(data_c[str(gene1)], data_c[str(gene2)], hue=data_c['label'], palette=palette)
 
-"""
-def scatter():
+    if add_linreg == True:
 
-    print('')
+        gene_a = data_c[str(gene1)].values.tolist()
+        gene_a = np.array(gene_a).astype(np.float)
+        gene_a = np.ndarray.tolist(gene_a)
+
+        gene_b = data_c[str(gene2)].values.tolist()
+        gene_b = np.array(gene_b).astype(np.float)
+        gene_b = np.ndarray.tolist(gene_b)
+
+        slope, intercept, r_value, p_value, std_err = linregress(gene_a, gene_b)
+
+        title = 'r = ' + "%.2f" % round(r_value,4)
+
+        x = np.linspace(data_c[str(gene1)].min(), data_c[str(gene1)].max(), 100)
+        y = (slope * x) + intercept
+        ax.plot(x, y, '-k')
+
+    # Put the legend out of the figure
+    handles,labels = ax.get_legend_handles_labels()
+
+    if order_legend != None:
+        if type(order_legend) is list:
+            plt.legend([handles[idx] for idx in order_legend],[labels[idx] for idx in order_legend], bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+        else:
+            plt.legend(handles, labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+            print('order_legend datatype is invalid -- plotting samples in default order...')
+    else:
+        plt.legend(handles, labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+
+    plt.xlabel(str(gene1))
+    plt.ylabel(str(gene2))
+
+    if title != None:
+        plt.title(str(title))
+
+    if grid == False:
+        plt.grid(False)
+
+    if save_fig != None:
+        plt.savefig(str(save_fig), dpi=dpi, bbox_inches=bbox_inches)
 
 """
 
