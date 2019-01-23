@@ -146,7 +146,7 @@ def gene_dictionary(file, file_type='gtf', return_dictionary=True, save_file=Non
         return
 
 """
-DESCRIPTION:
+DESCRIPTION: Rename .... maybe this is redundant. Needs to be tested anyways
 
 VARIABLES:
 gene_dictionary= MICARtools formatted gene_dictionary returned from gene_dictionary()
@@ -159,6 +159,7 @@ gene_id and gene_name should not be used together (one should be None)
 
 ASSUMPTIONS:
 No column is provided as index
+gene_dictionary keys are IDs and values are
 """
 def apply_dictionary(gene_dictionary, data, gene_id=None, gene_name=None, return_data=True, save_file=None, delimiter=','):
 
