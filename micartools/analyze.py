@@ -969,17 +969,19 @@ def violin(data, info, y_data, x_data='label', samples='rows', ordered=False, y_
 
     data_c = data_c.T
     data_c = data_c.dropna(axis=1)
+    data_c[[y_data]] = data_c[[y_data]].apply(pd.to_numeric)
 
     #Plot
     fig, ax = plt.subplots()
-    fig.set_size_inches(figsize)
+    if figsize != None:
+        fig.set_size_inches(figsize[1:-1])
 
     if ordered == True:
         ranks = data_c.groupby(x_data)[y_data].mean().fillna(0).sort_values()[::-1].index
     else:
         ranks = None
 
-    sns.violinplot(x=x_data, y=y_data, jitter=False, data=data_c, ax=ax, order=ranks)
+    sns.violinplot(x=x_data, y=y_data, data=data_c, ax=ax, order=ranks)
     if y_threshold != None:
         ax.axhline(y_threshold, ls='--')
 
