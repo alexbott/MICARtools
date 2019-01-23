@@ -75,6 +75,7 @@ def heatmap(data_scaled, info, palette=None, gene_list=None, save_fig=None, dpi=
             info = info.T
             info.columns = info.iloc[0]
             info = info.reindex(info.index.drop(0))
+            info = info.rename({1: 'samples'})
             labels = info.iloc[0]
             color_map = labels.map(palette)
 
@@ -589,7 +590,7 @@ grid= Control plot gridlines (default: False)
 ASSUMPTIONS:
 data and info dataframes are properly formatted for MICARtools and any appropriate sample/gene normalizations have been performed
 """
-def gene_overview(data, info, gene_name, palette, order=None, save_fig=None, dpi=600, bbox_inches='tight', grid=False, whitegrid= False):
+def gene_overview(data, info, gene_name, palette, order=None, save_fig=None, dpi=600, bbox_to_anchor='tight', grid=False, whitegrid= False):
 
     if whitegrid == True:
         sns.set_style("whitegrid")
