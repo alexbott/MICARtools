@@ -22,7 +22,7 @@ this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 IMPORT DEPENDENCIES
 """
-import sys
+import os, sys
 import pandas as pd
 import GEOparse
 
@@ -224,3 +224,99 @@ def keep_labels(data, info, label_list=None):
             data_dropped = data.drop(drop_ids_list, axis=1)
 
     return data_dropped
+
+"""
+DESCRIPTION: Compiles expression counts from multiple files into one table
+
+VARIABLES:
+delimiter= Delimiter style for expression files, will also output files if saved in this same format
+
+ASSUMPTIONS:
+File length of each is the same and ordered the same (same genes in the same order)
+Files to parse are expected to be header-less and column[0] should be gene identifiers and column[1] should be expression values
+"""
+def catenate_files(directory, file_suffix='txt' gene_dictionary=None, sample_dictionary=None, save_file=None, delimiter='\t', drop_rows=0):
+
+    #Walk through raw data files within given directory
+    if directory[:-1] != '/':
+        directory = directory + '/'
+
+    file_list = []
+    for subdir, dirs, files in os.walk(directory):
+        for f in files:
+            if f.endswith(file_suffix): #ignore hidden files and other uninterested files (particular for some submodules)
+                file_list.append(f)
+            else:
+                pass
+
+    #Sort files in alphabetical order (helps in formatting the count tables correctly)
+    file_list = sorted(file_list)
+
+    #get gene list from the first, as well as length(#rows)
+    with open(str(directory) + str(file_list[0])) as f:
+        gene_names = pd.read_csv(f, header=None, usecols=[0], dtype=str, sep=delimiter)
+        row_num = len(gene_names) - drop_rows
+        gene_names = gene_names[:-drop_rows]
+
+    #populate dataframe with expression values
+    data = pd.DataFrame(index=range(row_num))
+    data['gene_names'] = gene_names
+
+    for x in file_list:
+
+        with open(str(directory) + x) as f:
+            reader = pd.read_csv(f, header=None, usecols=[1], sep=delimiter)
+            data[x] = pd.Series(data.index)
+            length = len(reader)
+            data[x] = reader
+
+    #Change row names
+    if gene_dictionary != None:
+        data_set = rename_rows(data, gene_dictionary, 'gene_names')
+
+    #Change column names
+    if sample_dictionary != None:
+        data_set = rename_cols(data, sample_dictionary)
+
+    #Remove gene_names label
+    data_set = data_set.rename({'gene_names': ''}, axis='columns')
+
+    if save_file != None:
+        data_set.to_csv(str(save_file),sep=delimiter)
+
+    return data_set
+
+"""
+DESCRIPTION: Rename column names using dictionary
+
+VARIABLES:
+data= Dataframe to rename column names
+dictionary= Keys are old name and values are new names
+"""
+def rename_cols(data, dictionary):
+
+    data_c = data.copy()
+    data_set = data_c.rename(columns=dictionary, inplace=True)
+    return data_set
+
+"""
+DESCRIPTION: Rename values in a column (selected by providing column name) with a dictionary of keys and sort_values
+
+VARIABLES:
+data= Dataframe to rename row values
+dictionary= Keys are old name and values are new names
+label= Name of column to convert names; if 'index' is provided, will rename the index of the dataframe
+"""
+def rename_rows(data, dictionary, label):
+
+    data_c = data.copy()
+
+    if label = 'index':
+        data_c['index'] = data_c.index
+        data_c[label] = data_c['index'].replace(dictionary)
+        data_c = data_c.set_index('index')
+
+    else:
+        data_c[label] = data_c[label].replace(dictionary)
+
+    return data_c
