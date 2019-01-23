@@ -47,7 +47,7 @@ palette= Dictionary of labels and colors for plotting, or valid seaborns.cluster
 gene_list= List of genes (either as list or as .csv file path and name with list of genes) to plot (IMPORTANT: Gene names are case-sensitive)
 save_fig= If not None, provide full file path, name, and extension to save the file as
 dpi= Set dpi of saved figure
-bbox_inches= Format saved figure (often useful for making sure no text is cut off)
+bbox_to_anchor= Format saved figure (often useful for making sure no text is cut off)
 font_scale= Scaling factor for font
 cmap= A valid seaborns.clustermap cmap option (default: Rutter Lab colorblind-friendly scale)
 Please see seaborns.heatmap documentation for descriptions of the following options:
@@ -63,7 +63,7 @@ mat.heatmap(data_scaled, data_labeled, color_dict=color_dict, gene_list='/path/t
 ASSUMPTIONS:
 Data has been scaled and labeled with the MICARtools prep_data function
 """
-def heatmap(data_scaled, info, palette=None, gene_list=None, save_fig=None, dpi=600, bbox_inches='tight', font_scale=.8,
+def heatmap(data_scaled, info, palette=None, gene_list=None, save_fig=None, dpi=600, bbox_to_anchor='tight', font_scale=.8,
     cmap=jakes_cmap, center=0, metric='euclidean', method='centroid', xticklabels=True, linewidths=.03, linecolor='#DCDCDC', col_cluster=True,
     row_cluster=False, figsize=(16,6.5)):
 
@@ -135,7 +135,7 @@ def heatmap(data_scaled, info, palette=None, gene_list=None, save_fig=None, dpi=
 
     #Save figure
     if save_fig is not None:
-        plt.savefig(str(save_fig), dpi=dpi, bbox_inches=str(bbox_inches))
+        plt.savefig(str(save_fig), dpi=dpi, bbox_to_anchor=str(bbox_to_anchor))
 
 """
 DESCRIPTION: Create violin plots of subset of gene expressions or all gene expression by sample
@@ -147,13 +147,13 @@ order= List of samples in order to plot
 palette= Dictionary of matplotlib compatible colors for samples
 save_fig= If not None, provide full file path, name, and extension to save the file as
 dpi= Set dpi of saved figure
-bbox_inches= Format saved figure (often useful for making sure no text is cut off)
+bbox_to_anchor= Format saved figure (often useful for making sure no text is cut off)
 title= Provide title for figure and saved file if save_fig option used
 
 ASSUMPTIONS:
 Data has been scaled and labeled with the MICARtools prep_data function
 """
-def sample_overview(data_scaled, info , gene_list=None, order=None, palette=None, save_fig=None, dpi=600, bbox_inches='tight', title=None, grid=False, whitegrid=False):
+def sample_overview(data_scaled, info , gene_list=None, order=None, palette=None, save_fig=None, dpi=600, bbox_to_anchor='tight', title=None, grid=False, whitegrid=False):
 
     if whitegrid == True:
         sns.set_style("whitegrid")
@@ -218,10 +218,10 @@ def sample_overview(data_scaled, info , gene_list=None, order=None, palette=None
     #Save fig
     if save_fig is not None:
         if title is not None:
-            plt.savefig('./MICARtools_violin_plot.pdf', dpi=dpi, bbox_inches=bbox_inches)
+            plt.savefig('./MICARtools_violin_plot.pdf', dpi=dpi, bbox_to_anchor=bbox_to_anchor)
         else:
             ax.set_title(str(title))
-            plt.savefig(str(save_fig), dpi=dpi, bbox_inches=bbox_inches)
+            plt.savefig(str(save_fig), dpi=dpi, bbox_to_anchor=bbox_to_anchor)
 
     #Reset aesthetics
     sns.set_style("darkgrid")
@@ -246,7 +246,7 @@ plotly_login= ['userid','api key'], usage of this option creates a plotly intera
 title= Provide title for figure and saved file if save_fig option used
 save_fig= If not None, provide full file path, name, and extension to save the file as
 dpi= Set dpi of saved figure
-bbox_inches= Format saved figure (often useful for making sure no text is cut off)
+bbox_to_anchor= Format saved figure (often useful for making sure no text is cut off)
 order_legend= List of integers to reorder samples in legend (i.e. if samples are displayed 1:Sample_A, 2:Sample_C, 3:Sample_B, provide the list [1,3,2]) (Not currently compatible with 3-D PCA options)
 grid= For non-plotly options, remove gridlines from plot
 fig_size= Option not used in function currently
@@ -278,7 +278,7 @@ Add options to vary marker size and opacity
 def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_labels=False,
     ci=2, principle_components=[1,2], n_components=10, _3d_pca=False, plotly_login=None,
     scree_only=False, save_scree=None, return_pca_dataframe=False, size=10, whitegrid=False,
-    title=None, save_fig=None, dpi=600, bbox_inches='tight', order_legend=None, grid=False, fig_size=(10,10)):
+    title=None, save_fig=None, dpi=600, bbox_to_anchor='tight', order_legend=None, grid=False, fig_size=(10,10)):
 
     if whitegrid == True:
         sns.set_style("whitegrid")
@@ -362,7 +362,7 @@ def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_lab
 
         ax = sns.lineplot(x=sing_vals, y=scree, color="red")
         ax.set(xlabel='Principal Component', ylabel='Proportion of Variance Explained', title='Scree Plot')
-        plt.savefig(str(save_fig[:-4]) + '_scree.pdf', dpi=dpi, bbox_inches=bbox_inches)
+        plt.savefig(str(save_fig[:-4]) + '_scree.pdf', dpi=dpi, bbox_to_anchor=bbox_to_anchor)
 
         if grid == False:
             ax.grid(False)
@@ -441,7 +441,7 @@ def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_lab
 
                 #Save plot
                 plt.title(str(title))
-                plt.savefig(str(save_fig), dpi=dpi, bbox_inches=bbox_inches)
+                plt.savefig(str(save_fig), dpi=dpi, bbox_to_anchor=bbox_to_anchor)
 
         elif _3d_pca == True:
 
@@ -584,7 +584,7 @@ palette= Dictionary of matplotlib compatible colors for samples
 order= List of samples in order to plot
 save_fig= If not None, provide full file path, name, and extension to save the file as
 dpi= Set dpi of saved figure
-bbox_inches= Format saved figure (often useful for making sure no text is cut off)
+bbox_to_anchor= Format saved figure (often useful for making sure no text is cut off)
 grid= Control plot gridlines (default: False)
 
 ASSUMPTIONS:
@@ -725,7 +725,7 @@ def scatter(data, info, gene1, gene2, palette, add_linreg=False, order_legend=No
         plt.grid(False)
 
     if save_fig != None:
-        plt.savefig(str(save_fig), dpi=dpi, bbox_inches=bbox_inches)
+        plt.savefig(str(save_fig), dpi=dpi, bbox_to_anchor=bbox_to_anchor)
 
     #Revert to default styles
     sns.set_style('darkgrid')
@@ -746,7 +746,7 @@ return_threshold_hits= Will return a .csv-type matrix of significant genes/hits 
 return_threshold_hits_delimiter= Delimiter to use in exporting return_threshold_hits
 save_fig= If not None, provide full file path, name, and extension to save the file as
 dpi= Set dpi of saved figure
-bbox_inches= Format saved figure (often useful for making sure no text is cut off)
+bbox_to_anchor= Format saved figure (often useful for making sure no text is cut off)
 
 LIMITATIONS:
 Will only perform comparison between 2 sample types
@@ -757,7 +757,7 @@ y_threshold must be a postive integer or float
 """
 def volcano(data, info, label_comp, label_base, highlight_genes=None, highlight_color='DarkRed', alpha=1, alpha_highlights=1,
             y_threshold=10, x_threshold=1, return_threshold_hits=False, export_threshold_hits=None, export_threshold_hits_delimiter=',',
-            save_fig=None, dpi=600, bbox_inches='tight', whitegrid=False):
+            save_fig=None, dpi=600, bbox_to_anchor='tight', whitegrid=False):
 
     if whitegrid == True:
         sns.set_style("whitegrid")
@@ -769,7 +769,6 @@ def volcano(data, info, label_comp, label_base, highlight_genes=None, highlight_
 
     #Add labels to column name
     if 'label' in data_c.index:
-        print('yep')
         data_c = data_c.drop(labels='label',axis=0)
 
     info_c["id"] = info_c[0] + '_' + info_c[1]
@@ -829,7 +828,7 @@ def volcano(data, info, label_comp, label_base, highlight_genes=None, highlight_
 
     #Save plot if user-specified
     if save_fig != None:
-        plt.savefig(str(save_fig), dpi=dpi, bbox_inches=bbox_inches)
+        plt.savefig(str(save_fig), dpi=dpi, bbox_to_anchor=bbox_to_anchor)
 
     #Save hits if user-specified
     if export_threshold_hits != None or return_threshold_hits == True:
@@ -841,6 +840,55 @@ def volcano(data, info, label_comp, label_base, highlight_genes=None, highlight_
             thresh_hits.to_csv(str(return_threshold_hits), sep=export_threshold_hits_delimiter) #export table for user
         else:
             return thresh_hits
+
+    #Revert to default styles
+    sns.set_style('darkgrid')
+
+"""
+
+"""
+def jointplot(data, info, gene1, gene2, kind='reg', palette=None, order=None, save_fig=None, dpi=600, bbox_to_anchor='tight', whitegrid=False, grid=False):
+
+    if whitegrid == True:
+        sns.set_style("whitegrid")
+
+    data_c = data.copy()
+    data_c = data_c.dropna(axis=0)
+
+    #Prep data_scaled by adding labels from info
+    if 'label' not in data_c.index:
+        labels = pd.Series(info[1].values,index=info[0]).to_dict()
+        data_c.loc['label'] = data_c.columns.map(labels.get)
+
+    #Get r
+    data_c = data_c.T
+    gene_a = data_c[str(gene1)].values.tolist()
+    gene_a = np.array(gene_a).astype(np.float)
+    gene_a = np.ndarray.tolist(gene_a)
+
+    gene_b = data_c[str(gene2)].values.tolist()
+    gene_b = np.array(gene_b).astype(np.float)
+    gene_b = np.ndarray.tolist(gene_b)
+
+    r_value = stats.pearsonr(gene_a, gene_b)[0]
+
+    #Plot
+    ax = sns.jointplot(x=str(gene_a), y=str(gene_b), data=data_c, kind='reg')
+    ax.ax_joint.collections[0].set_visible(False)
+    ax = sns.scatterplot(x=str(gene_a), y=str(gene_b), data=data_c, hue='label', palette=palette, hue_order=order)
+    ax.set_title('r: ' + str(round(r_value,4)), y=0.92, x=0.09)
+
+    if r_value > 0:
+        plt.legend(loc='lower right')
+
+    if grid == False:
+        plt.grid(False)
+
+    fig = ax.get_figure()
+    plt.show()
+
+    if save_fig != None:
+        fig.savefig(str(save_fig), dpi=dpi, bbox_to_anchor=bbox_to_anchor)
 
     #Revert to default styles
     sns.set_style('darkgrid')
