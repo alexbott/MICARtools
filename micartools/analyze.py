@@ -875,7 +875,7 @@ def jointplot(data, info, gene1, gene2, kind='reg', palette=None, order=None, sa
     #Plot
     ax = sns.jointplot(x=gene_a, y=gene_b, kind='reg')
     ax.ax_joint.collections[0].set_visible(False)
-    ax = sns.scatterplot(x=str(gene_a), y=str(gene_b), data=data_c, hue='label', palette=palette, hue_order=order)
+    ax = sns.scatterplot(x=str(gene1), y=str(gene2), data=data_c, hue='label', palette=palette, hue_order=order)
     ax.set_title('r: ' + str(round(r_value,2)), y=0.92, x=0.09)
 
     if r_value > 0:
