@@ -52,6 +52,7 @@ font_scale= Scaling factor for font
 cmap= A valid seaborns.clustermap cmap option (default: Rutter Lab colorblind-friendly scale)
 Please see seaborns.heatmap documentation for descriptions of the following options:
 center, metric, method, xticklabels, linewidths, linecolor, col_cluster, row_cluster, figsize
+figsize= (Width, Height)
 
 USAGE:
 import micartools as mat
@@ -666,7 +667,26 @@ def linreg(data, gene_name, save_file, delimiter=','):
     df_lm_interest.to_csv(str(save_file), sep=delimiter)
 
 """
-If add_linreg used, title variable is void
+DESCRIPTION: Create scatterplot comparing gene expression of two genes across samples
+
+VARIABLES:
+data= Dataframe of expression data (samples are columns, genes are rows)
+info= MICARtools formatted sample info dataframe
+gene1= Name of gene to plot on x_axis
+gene1= Name of gene to plot on y_axis
+palette= Dictionary of matplotlib compatible colors for samples
+add_linreg= Add linear regression line and print r value in plot title
+order_legend= Order of samples to display in legend
+title= Plot title to display; if add_linreg used, title variable is void
+save_fig= If not None, provide full file path, name, and extension to save the file as
+dpi= Set dpi of saved figure
+bbox_to_anchor= Format saved figure (often useful for making sure no text is cut off)
+grid= Control plot gridlines (default: False)
+whitegrid= Use whitegrid background in plot
+alpha= Control opacity of points on plot (useful for getting an idea of density in large datasets)
+
+ASSUMPTIONS:
+MICARtools formatted data and info dataframes, palette is a dictionary of labels and colors to plot points with
 """
 def scatter(data, info, gene1, gene2, palette, add_linreg=False, order_legend=None, title=None, save_fig=None, dpi=600, bbox_to_anchor='tight', grid=False, whitegrid=False, alpha=1):
 
@@ -731,7 +751,7 @@ def scatter(data, info, gene1, gene2, palette, add_linreg=False, order_legend=No
     sns.set_style('darkgrid')
 
 """
-DESCRIPTION:
+DESCRIPTION: Plot volcano plot for dataframe, can highlight subset of genes
 
 VARIABLES:
 data= Sample-normalized, MICARtools-formatted data -- should NOT be gene-normalized
@@ -845,7 +865,24 @@ def volcano(data, info, label_comp, label_base, highlight_genes=None, highlight_
     sns.set_style('darkgrid')
 
 """
+DESCRIPTION: Create scatterplot with r value and jointplot density distributions for axes
 
+VARIABLES:
+data= Dataframe of expression data (samples are columns, genes are rows)
+info= MICARtools formatted sample info dataframe
+gene1= Name of gene to plot on x_axis
+gene1= Name of gene to plot on y_axis
+kind= See seaborn jointplot documentation for options (https://seaborn.pydata.org/generated/seaborn.jointplot.html)
+palette= Dictionary of matplotlib compatible colors for samples
+order= Order of samples to display in plot
+save_fig= If not None, provide full file path, name, and extension to save the file as
+dpi= Set dpi of saved figure
+bbox_to_anchor= Format saved figure (often useful for making sure no text is cut off)
+grid= Control plot gridlines (default: False)
+whitegrid= Use whitegrid background in plot
+
+ASSUMPTIONS:
+MICARtools formatted data and info dataframes, palette (if used) is a dictionary of labels and colors to plot points with
 """
 def jointplot(data, info, gene1, gene2, kind='reg', palette=None, order=None, save_fig=None, dpi=600, bbox_to_anchor='tight', whitegrid=False, grid=False):
 
@@ -894,8 +931,65 @@ def jointplot(data, info, gene1, gene2, kind='reg', palette=None, order=None, sa
     sns.set_style('darkgrid')
 
 """
+DESCRIPTION: Create violin plots for all samples of a particular metric
 
+VARIABLES:
+data= Dataframe of expression data (samples are columns, genes are rows)
+info= MICARtools formatted sample info dataframe
+y_data= Assuming samples='rows', column to plot in the y_axis
+x_data= Assuming samples='rows', column to plot in the x_axis (sample groupings)
+samples= Axis where samples are found (default:'row')
+ordered= If True, will order plots from highest mean to lowest mean
+y_threshold= If provided with an integer or float, will plot a dotted line on the y_axis at this point
+save_fig= If not None, provide full file path, name, and extension to save the file as
+dpi= Set dpi of saved figure
+bbox_to_anchor= Format saved figure (often useful for making sure no text is cut off)
+figsize= (Width, Height)
+grid= Control plot gridlines (default: False)
+whitegrid= Use whitegrid background in plot
+
+ASSUMPTIONS:
+data is formatted so that samples are rows, if not, specify in options and dataframe will be reformatted
 """
-def violin():
+def violin(data, info, y_data, x_data='label', samples='rows', ordered=False, y_threshold=None, save_fig=None, dpi=600,
+            bbox_to_anchor='tight', figsize=None, whitegrid=False, grid=False):
 
-    print('')
+    if whitegrid == True:
+        sns.set_style("whitegrid")
+
+    data_c = data.copy()
+
+    #Prep data_scaled by adding labels from info
+    if samples == 'rows':
+        data_c = data_c.T
+
+    if x_data not in data_c.index:
+        labels = pd.Series(info[1].values,index=info[0]).to_dict()
+        data_c.loc[x_data] = data_c.columns.map(labels.get)
+
+    data_c = data_c.T
+    data_c = data_c.dropna(axis=1)
+
+    #Plot
+    fig, ax = plt.subplots()
+    fig.set_size_inches(figsize)
+
+    if ordered == True:
+        ranks = data_c.groupby(x_data)[y_data].mean().fillna(0).sort_values()[::-1].index
+    else:
+        ranks = None
+
+    sns.violinplot(x=x_data, y=y_data, jitter=False, data=data_c, ax=ax, order=ranks)
+    if y_threshold != None:
+        ax.axhline(y_threshold, ls='--')
+
+    ax.set_ylabel(y_data)
+
+    if grid == False:
+        plt.grid(False)
+
+    if save_fig != None:
+        fig.savefig(str(save_fig), dpi=dpi, bbox_to_anchor=bbox_to_anchor)
+
+    #Revert to default styles
+    sns.set_style('darkgrid')
