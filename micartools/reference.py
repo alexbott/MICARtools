@@ -29,16 +29,17 @@ import re
 pd.options.mode.chained_assignment = None
 from multiprocessing import cpu_count, Pool
 
-from .utils import truncate_chunk, parallelize
+from .utils import truncate, parallelize
 
 """
 DESCRIPTION: Create a GTF reference file with only protein coding genes and the first n nucleotides of each first exon
 
 METHODS: Considers strandedness
+Multiprocesses chunks of a dataframe on cores of computer
 
 VARIABLES:
 
-
+ASSUMPTIONS:
 """
 def truncate_gtf(gtf_file, truncate=45, save_file=None, save_coding_only=None, delimiter='\t', return_dataframe=False):
 
@@ -59,7 +60,7 @@ def truncate_gtf(gtf_file, truncate=45, save_file=None, save_coding_only=None, d
     gtf_coding_c = gtf_coding.copy()
 
     print("Multiprocessing reference chunks -- this may take a while...")
-    gtf_truncated = parallelize(gtf_coding_c, truncate_chunk)
+    gtf_truncated = parallelize(gtf_coding_c, truncate)
 
     if return_dataframe == True:
         return gtf_truncated
