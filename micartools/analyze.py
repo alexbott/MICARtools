@@ -139,6 +139,9 @@ def heatmap(data_scaled, info, palette=None, gene_list=None, save_fig=None, dpi=
     if save_fig is not None:
         plt.savefig(str(save_fig), dpi=dpi, bbox_to_anchor=str(bbox_to_anchor))
 
+    plt.close()
+    plt.clf()
+
 """
 DESCRIPTION: Create violin plots of subset of gene expressions or all gene expression by sample
 
@@ -226,6 +229,9 @@ def sample_overview(data_scaled, info , gene_list=None, order=None, palette=None
             plt.savefig(str(save_fig), dpi=dpi, bbox_to_anchor=bbox_to_anchor)
 
     #Reset aesthetics
+    del ax
+    plt.close()
+    plt.clf()
     sns.set_style("darkgrid")
 
 """
@@ -573,6 +579,9 @@ def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_lab
         return df_pca
 
     #Reset aesthetics
+    del ax
+    plt.close()
+    plt.clf()
     sns.set_style("darkgrid")
 
 """
@@ -622,6 +631,9 @@ def gene_overview(data, info, gene_name, palette, order=None, save_fig=None, dpi
         fig.savefig(str(save_fig), dpi=dpi, bbox_to_anchor=bbox_to_anchor)
 
     #Reset plot aesthetics
+    del ax
+    plt.close()
+    plt.clf()
     sns.set_style("darkgrid")
 
 """
@@ -749,6 +761,9 @@ def scatter(data, info, gene1, gene2, palette, add_linreg=False, order_legend=No
         plt.savefig(str(save_fig), dpi=dpi, bbox_to_anchor=bbox_to_anchor)
 
     #Revert to default styles
+    del ax
+    plt.close()
+    plt.clf()
     sns.set_style('darkgrid')
 
 """
@@ -863,6 +878,9 @@ def volcano(data, info, label_comp, label_base, highlight_genes=None, highlight_
             return thresh_hits
 
     #Revert to default styles
+    del ax
+    plt.close()
+    plt.clf()
     sns.set_style('darkgrid')
 
 """
@@ -929,6 +947,9 @@ def jointplot(data, info, gene1, gene2, kind='reg', palette=None, order=None, sa
         fig.savefig(str(save_fig), dpi=dpi, bbox_to_anchor=bbox_to_anchor)
 
     #Revert to default styles
+    del ax
+    plt.close()
+    plt.clf()
     sns.set_style('darkgrid')
 
 """
@@ -995,6 +1016,9 @@ def violin(data, info, y_data, x_data='label', samples='rows', ordered=False, y_
         fig.savefig(str(save_fig), dpi=dpi, bbox_to_anchor=bbox_to_anchor)
 
     #Revert to default styles
+    del ax
+    plt.close()
+    plt.clf()
     sns.set_style('darkgrid')
 
 """
