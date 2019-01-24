@@ -858,7 +858,7 @@ def volcano(data, info, label_comp, label_base, highlight_genes=None, highlight_
         df_down = df_c.loc[(df_c['log2 Fold Change'] < -x_threshold) & (df_c['-log10 P-Value'] > y_threshold)] #get downregulated hits
         thresh_hits = df_up.append(df_down) #append hits tables
         if export_threshold_hits != None:
-            thresh_hits.to_csv(str(return_threshold_hits), sep=export_threshold_hits_delimiter) #export table for user
+            thresh_hits.to_csv(str(export_threshold_hits), sep=export_threshold_hits_delimiter) #export table for user
         else:
             return thresh_hits
 
