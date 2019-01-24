@@ -995,3 +995,85 @@ def violin(data, info, y_data, x_data='label', samples='rows', ordered=False, y_
 
     #Revert to default styles
     sns.set_style('darkgrid')
+
+"""
+DESCRIPTION: Create interactive scatter plot that displays relevant sample/gene name and coordinates
+
+VARIABLES:
+data= MICARtools formatted expression matrix
+"""
+def interactive_scatter(data, x, y, plotly_login, file_name, highlight='sample', info=None, palette=None):
+
+    import plotly
+    import plotly.plotly as py
+    import plotly.graph_objs as go
+    plotly.tools.set_credentials_file(username=plotly_login[0], api_key=plotly_login[1])
+
+    data_c = data.copy()
+
+    if highlight == 'sample':
+        #Add labels if not there
+        if 'label' not in data_c.index:
+            labels = pd.Series(info[1].values,index=info[0]).to_dict()
+            data_c.loc['label'] = data_c.columns.map(labels.get)
+
+        data_c = data_c.T
+        df_plot = data_c[[x, y,'label']]
+
+        traces = []
+        for index, row in df_plot.iterrows():
+
+            _x = [df_plot.loc[index][x]]
+            _y = [df_plot.loc[index][y]]
+
+            traces.append(go.Scatter(
+                                x = _x,
+                                y = _y,
+                                name = index,
+                                mode = 'markers',
+                                marker = dict(
+                                    size = 10,
+                                    color = palette[df_plot.loc[index]['label']],
+                                    line = dict(
+                                        width = 2,
+                                        color = 'rgb(0, 0, 0)'
+                                    )
+                                )
+                            )
+                         )
+
+    elif highlight == 'gene':
+        df_plot = data_c[[x, y]]
+
+        traces = []
+        for index, row in df_plot.iterrows():
+
+            _x = [df_plot.loc[index][x]]
+            _y = [df_plot.loc[index][y]]
+
+            traces.append(go.Scatter(
+                                x = _x,
+                                y = _y,
+                                name = index,
+                                mode = 'markers',
+                                marker = dict(
+                                    size = 2,
+                                    line = dict(
+                                        width = 2
+                                    )
+                                )
+                            )
+                         )
+
+    else:
+        print('Error: Invalid input for highlight')
+        return
+
+    data = traces
+    layout = dict(yaxis = dict(zeroline = False),
+                  xaxis = dict(zeroline = False),
+                  showlegend=False
+                 )
+
+    fig = dict(data=data, layout=layout)
+    py.iplot(fig, filename=str(file_name))

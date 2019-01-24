@@ -235,7 +235,7 @@ ASSUMPTIONS:
 File length of each is the same and ordered the same (same genes in the same order)
 Files to parse are expected to be header-less and column[0] should be gene identifiers and column[1] should be expression values
 """
-def catenate_files(directory, file_suffix='txt' gene_dictionary=None, sample_dictionary=None, save_file=None, delimiter='\t', drop_rows=0):
+def catenate_files(directory, file_suffix='txt', gene_dictionary=None, sample_dictionary=None, save_file=None, delimiter='\t', drop_rows=0):
 
     #Walk through raw data files within given directory
     if directory[:-1] != '/':
@@ -311,7 +311,7 @@ def rename_rows(data, dictionary, label):
 
     data_c = data.copy()
 
-    if label = 'index':
+    if label == 'index':
         data_c['index'] = data_c.index
         data_c[label] = data_c['index'].replace(dictionary)
         data_c = data_c.set_index('index')
