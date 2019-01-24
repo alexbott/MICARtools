@@ -25,7 +25,6 @@ DEPENDENCIES
 from .utils import custom_list
 import pandas as pd
 import matplotlib
-matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import seaborn as sns
@@ -578,7 +577,6 @@ def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_lab
         print('This feature has not been implemented yet')
 
     #Reset aesthetics
-    del ax
     plt.close()
     plt.clf()
     sns.set_style("darkgrid")
@@ -779,11 +777,12 @@ highlight_genes= If provided with a list, or a file path and name to a .csv-type
 highlight_color= Color to use for highlighted genes
 y_threshold= -log10(P-Value) threshold to use to identify significant hits. Will create a dotted line on the plot and use to pull significant hits if return_threshold_hits is not None
 x_threshold= log2(Fold Change) threshold to use to identify significant hits. Will take the positive and negative of the number. Will create a dotted line on the plot and use to pull significant hits if return_threshold_hits is not None
-return_threshold_hits= Will return a .csv-type matrix of significant genes/hits to the file path and name specified
-return_threshold_hits_delimiter= Delimiter to use in exporting return_threshold_hits
+save_threshold_hits= Will save a .csv-type matrix of significant genes/hits to the file path and name specified
+save_threshold_hits_delimiter= Delimiter to use in exporting return_threshold_hits
 save_fig= If not None, provide full file path, name, and extension to save the file as
 dpi= Set dpi of saved figure
 bbox_to_anchor= Format saved figure (often useful for making sure no text is cut off)
+return_data= Return dataframe with PCs (will not print plot to stout)
 
 LIMITATIONS:
 Will only perform comparison between 2 sample types
@@ -793,8 +792,11 @@ data should ONLY be sample normalized. If using a previous function that returne
 y_threshold must be a postive integer or float
 """
 def volcano(data, info, label_comp, label_base, highlight_genes=None, highlight_color='DarkRed', alpha=1, alpha_highlights=1,
-            y_threshold=10, x_threshold=1, export_threshold_hits=None, export_threshold_hits_delimiter=',',
-            save_fig=None, dpi=600, bbox_to_anchor='tight', whitegrid=False):
+            y_threshold=10, x_threshold=1, save_threshold_hits=None, save_threshold_hits_delimiter=',',
+            save_fig=None, dpi=600, bbox_to_anchor='tight', whitegrid=False, return_data=False):
+
+    plt.close()
+    plt.clf()
 
     if whitegrid == True:
         sns.set_style("whitegrid")
@@ -824,7 +826,7 @@ def volcano(data, info, label_comp, label_base, highlight_genes=None, highlight_
         ground_row = data_c.loc[index].filter(regex=str(label_base)).values.tolist()
 
         # Append p_value to df_oxsm_volc
-        statistic, p_value = stats.f_oneway(comp_row, ground_row)
+        statistic, p_value = stats.ttest_ind(comp_row, ground_row)
         data_c.loc[index,'-log10 P-Value'] = float(-1 * (np.log10(p_value)))
 
     #Plot all genes
@@ -873,16 +875,18 @@ def volcano(data, info, label_comp, label_base, highlight_genes=None, highlight_
     df_down = df_c.loc[(df_c['log2 Fold Change'] < -x_threshold) & (df_c['-log10 P-Value'] > y_threshold)] #get downregulated hits
     thresh_hits = df_up.append(df_down) #append hits tables
 
-    if export_threshold_hits != None:
-        thresh_hits.to_csv(str(export_threshold_hits), sep=export_threshold_hits_delimiter) #export table for user
+    #export table for user
+    if save_threshold_hits != None:
+        thresh_hits.to_csv(str(save_threshold_hits), sep=save_threshold_hits_delimiter)
 
-    #Revert to default styles
-    del ax
-    plt.close()
-    plt.clf()
+    #If return option provided, return dataframe, else print plot to stout
+    if return_data == True:
+        return thresh_hits
+    else:
+        plt.show()
+
+    #Revert plot style
     sns.set_style('darkgrid')
-
-    return thresh_hits
 
 """
 DESCRIPTION: Create scatterplot with r value and jointplot density distributions for axes
