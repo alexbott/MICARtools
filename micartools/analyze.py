@@ -25,6 +25,7 @@ DEPENDENCIES
 from .utils import custom_list
 import pandas as pd
 import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import seaborn as sns
@@ -843,7 +844,7 @@ def volcano(data, info, label_comp, label_base, highlight_genes=None, highlight_
 
     #Set labels and other plotting aesthetics
     ax.set_ylabel('-log$_1$$_0$(P-Value)')
-    ax.set_xlabel('-log$_2$(Fold Change)')
+    ax.set_xlabel('log$_2$(Fold Change)')
     plt.grid(False)
 
     #Save plot if user-specified
