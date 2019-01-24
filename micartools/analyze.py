@@ -237,6 +237,8 @@ def sample_overview(data_scaled, info , gene_list=None, order=None, palette=None
 """
 DESCRIPTION: Plot a 2-D PCA with confidence intervals or a 3-D PCA with no confidence intervals
 
+RETURNS: Dataframe with PCs calculated
+
 METHODS: 3-D PCA -- option to output as interactive plot by providing plotly credentials, or as a static plot without these credentials (default)
 
 VARIABLES:
@@ -248,7 +250,7 @@ gene_list= List of genes (either as list or as .csv file path and name with list
 gene_labels= Option for grouping='genes', not currently implemented
 ci= For 2-D PCA, confidence interval to display for each sample type (i.e. 1 == CI1 == 68%, 2 == CI2 == 95%, 3 == CI3 == 99%)
 principle_components= Principle components to plot (default: [1,2] for 2-D PCA, or [1,2,3] for 3-D PCA)
-n_components= Number of components to calculate in dataframe (more applicable if you want to perform a deeper survey of the principle components -- values returned if return_pca_dataframe=True)
+n_components= Number of components to calculate in dataframe (more applicable if you want to perform a deeper survey of the principle components)
 _3d_pca= Plot 3 principle components (default: False)
 plotly_login= ['userid','api key'], usage of this option creates a plotly interactive plot that can be viewed online using your login credentials
 title= Provide title for figure and saved file if save_fig option used
@@ -285,7 +287,7 @@ Add options to vary marker size and opacity
 """
 def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_labels=False,
     ci=2, principle_components=[1,2], n_components=10, _3d_pca=False, plotly_login=None,
-    scree_only=False, save_scree=None, return_pca_dataframe=False, size=10, whitegrid=False,
+    scree_only=False, save_scree=None, size=10, whitegrid=False,
     title=None, save_fig=None, dpi=600, bbox_to_anchor='tight', order_legend=None, grid=False, fig_size=(10,10)):
 
     if whitegrid == True:
@@ -575,14 +577,13 @@ def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_lab
     else:
         print('This feature has not been implemented yet')
 
-    if return_pca_dataframe is True:
-        return df_pca
-
     #Reset aesthetics
     del ax
     plt.close()
     plt.clf()
     sns.set_style("darkgrid")
+
+    return df_pca
 
 """
 DESCRIPTION: Plot boxplot overlaid with swarmplot of each sample type's gene expression for the given gene
@@ -792,7 +793,7 @@ data should ONLY be sample normalized. If using a previous function that returne
 y_threshold must be a postive integer or float
 """
 def volcano(data, info, label_comp, label_base, highlight_genes=None, highlight_color='DarkRed', alpha=1, alpha_highlights=1,
-            y_threshold=10, x_threshold=1, return_threshold_hits=False, export_threshold_hits=None, export_threshold_hits_delimiter=',',
+            y_threshold=10, x_threshold=1, export_threshold_hits=None, export_threshold_hits_delimiter=',',
             save_fig=None, dpi=600, bbox_to_anchor='tight', whitegrid=False):
 
     if whitegrid == True:
@@ -867,21 +868,21 @@ def volcano(data, info, label_comp, label_base, highlight_genes=None, highlight_
         plt.savefig(str(save_fig), dpi=dpi, bbox_to_anchor=bbox_to_anchor)
 
     #Save hits if user-specified
-    if export_threshold_hits != None or return_threshold_hits == True:
-        df_c = data_c[['log2 Fold Change', '-log10 P-Value']].copy()
-        df_up = df_c.loc[(df_c['log2 Fold Change'] > x_threshold) & (df_c['-log10 P-Value'] > y_threshold)] #get upregulated hits
-        df_down = df_c.loc[(df_c['log2 Fold Change'] < -x_threshold) & (df_c['-log10 P-Value'] > y_threshold)] #get downregulated hits
-        thresh_hits = df_up.append(df_down) #append hits tables
-        if export_threshold_hits != None:
-            thresh_hits.to_csv(str(export_threshold_hits), sep=export_threshold_hits_delimiter) #export table for user
-        else:
-            return thresh_hits
+    df_c = data_c[['log2 Fold Change', '-log10 P-Value']].copy()
+    df_up = df_c.loc[(df_c['log2 Fold Change'] > x_threshold) & (df_c['-log10 P-Value'] > y_threshold)] #get upregulated hits
+    df_down = df_c.loc[(df_c['log2 Fold Change'] < -x_threshold) & (df_c['-log10 P-Value'] > y_threshold)] #get downregulated hits
+    thresh_hits = df_up.append(df_down) #append hits tables
+
+    if export_threshold_hits != None:
+        thresh_hits.to_csv(str(export_threshold_hits), sep=export_threshold_hits_delimiter) #export table for user
 
     #Revert to default styles
     del ax
     plt.close()
     plt.clf()
     sns.set_style('darkgrid')
+
+    return thresh_hits
 
 """
 DESCRIPTION: Create scatterplot with r value and jointplot density distributions for axes
