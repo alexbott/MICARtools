@@ -24,5 +24,6 @@ from .fetch import *
 from .normalize import *
 from .quality import *
 from .reference import *
+from .utils import *
 
 __version__ = '0.0.1-beta'
