@@ -27,7 +27,6 @@ import numpy as np
 import csv
 import re
 pd.options.mode.chained_assignment = None
-from multiprocessing import cpu_count, Pool
 
 from .utils import truncate, parallelize
 
