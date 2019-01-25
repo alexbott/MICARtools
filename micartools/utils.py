@@ -27,6 +27,10 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import seaborn as sns
 from multiprocessing import cpu_count, Pool
+import scipy.stats as stats
+import numpy as np
+import pandas as pd
+from functools import partial
 
 """
 DESCRIPTION: Axis-agnostic list-reader from dataframe
@@ -47,6 +51,7 @@ DESCRIPTION:
 """
 #Truncate 45 nt
 def truncate(gtf):
+
     gtf['plus'] = gtf[[2,3,4,6,8]].apply(lambda x:
         (x[3] + 45) if x[2] == "exon" and x[3] + 45 <= x[4] and x[6] == "+" and "exon_number \"1\"" in x[8] else (
         "delete_this" if x[2] == "exon" and x[3] + 45 > x[4] and x[6] == "+" and "exon_number \"1\"" in x[8] else x[3]),axis=1)
@@ -68,18 +73,62 @@ def truncate(gtf):
     return gtf
 
 """
+DESCRIPTION
+"""
+def calculate_fc(data, label_comp, label_base):
+
+    # Average every by cell line
+    data['log2 Fold Change'] = np.log2((data.filter(regex=str(label_comp)).mean(axis=1)) / \
+                                      (data.filter(regex=str(label_base)).mean(axis=1)))
+    data['-log10 P-Value'] = ''
+
+    return data
+
+"""
+DESCRIPTION
+"""
+def calculate_p(data, label_comp, label_base, drop_index):
+
+    # Calculate p-value using 1-way ANOVA with replicates and append to df_oxsm_volc
+    for row in data.iterrows():
+        index, row_data = row
+        comp_row = data.loc[index].filter(regex=str(label_comp)).values.tolist()
+        base_row = data.loc[index].filter(regex=str(label_base)).values.tolist()
+
+        # Append p_value to df_oxsm_volc
+        try:
+            statistic, p_value = stats.ttest_ind(comp_row, base_row)
+            data.loc[index,'-log10 P-Value'] = float(-1 * (np.log10(p_value)))
+        except:
+            drop_index.append(index)
+
+    data = data.drop(labels=drop_index, axis=0)
+
+    return data
+
+"""
 DESCRIPTION: Parallelize function on a chunk of a dataframe
 """
-def parallelize(data, func):
+def parallelize(func, *args):
 
     cores = cpu_count() #Number of CPU cores on your system
     partitions = cpu_count() #Define as many partitions as you want
 
-    data_split = np.array_split(data, partitions)
+    data_split = np.array_split(args[0], partitions)
     pool = Pool(cores)
+
+    if len(args) == 4:
+        func = partial(calculate_p, label_comp=args[1], label_base=args[2], drop_index=args[3])
+    elif len(args) == 3:
+        func = partial(calculate_fc, label_comp=args[1], label_base=args[2])
+    else:
+        return
+
     data = pd.concat(pool.map(func, data_split))
+
     pool.close()
     pool.join()
+
     return data
 
 """
