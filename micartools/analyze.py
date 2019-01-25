@@ -22,7 +22,7 @@ this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 DEPENDENCIES
 """
-from .utils import custom_list
+from .utils import custom_list, reset_plot
 import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
@@ -67,6 +67,8 @@ Data has been scaled and labeled with the MICARtools prep_data function
 def heatmap(data_scaled, info, palette=None, gene_list=None, save_fig=None, dpi=600, bbox_to_anchor='tight', font_scale=.8,
     cmap=jakes_cmap, center=0, metric='euclidean', method='centroid', xticklabels=True, linewidths=.03, linecolor='#DCDCDC', col_cluster=True,
     row_cluster=False, figsize=(16,6.5)):
+
+    reset_plot(True)
 
     scaled = data_scaled.copy()
 
@@ -138,9 +140,6 @@ def heatmap(data_scaled, info, palette=None, gene_list=None, save_fig=None, dpi=
     if save_fig is not None:
         plt.savefig(str(save_fig), dpi=dpi, bbox_to_anchor=str(bbox_to_anchor))
 
-    plt.close()
-    plt.clf()
-
 """
 DESCRIPTION: Create violin plots of subset of gene expressions or all gene expression by sample
 
@@ -159,8 +158,7 @@ Data has been scaled and labeled with the MICARtools prep_data function
 """
 def sample_overview(data_scaled, info , gene_list=None, order=None, palette=None, save_fig=None, dpi=600, bbox_to_anchor='tight', title=None, grid=False, whitegrid=False):
 
-    if whitegrid == True:
-        sns.set_style("whitegrid")
+    reset_plot(whitegrid)
 
     #For some reason, function is returning data_scaled with labels, even though not specified to return anything
     #This solves the issue, but still throws the error
@@ -227,11 +225,7 @@ def sample_overview(data_scaled, info , gene_list=None, order=None, palette=None
             ax.set_title(str(title))
             plt.savefig(str(save_fig), dpi=dpi, bbox_to_anchor=bbox_to_anchor)
 
-    #Reset aesthetics
-    del ax
-    plt.close()
-    plt.clf()
-    sns.set_style("darkgrid")
+    plt.show()
 
 """
 DESCRIPTION: Plot a 2-D PCA with confidence intervals or a 3-D PCA with no confidence intervals
@@ -289,8 +283,7 @@ def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_lab
     scree_only=False, save_scree=None, size=10, whitegrid=False,
     title=None, save_fig=None, dpi=600, bbox_to_anchor='tight', order_legend=None, grid=False, fig_size=(10,10)):
 
-    if whitegrid == True:
-        sns.set_style("whitegrid")
+    reset_plot(whitegrid)
 
     #Initial variable checks
     if len(principle_components) != 2 and _3d_pca == False:
@@ -377,9 +370,7 @@ def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_lab
             ax.grid(False)
 
         #Remove scree from memory to prevent plot bleeding
-        del ax
-        plt.close()
-        plt.clf()
+        reset_plot(whitegrid, ax=True)
 
         if scree_only == True:
             return
@@ -451,6 +442,8 @@ def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_lab
                 #Save plot
                 plt.title(str(title))
                 plt.savefig(str(save_fig), dpi=dpi, bbox_to_anchor=bbox_to_anchor)
+
+            plt.show()
 
         elif _3d_pca == True:
 
@@ -576,11 +569,6 @@ def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_lab
     else:
         print('This feature has not been implemented yet')
 
-    #Reset aesthetics
-    plt.close()
-    plt.clf()
-    sns.set_style("darkgrid")
-
     return df_pca
 
 """
@@ -602,8 +590,7 @@ data and info dataframes are properly formatted for MICARtools and any appropria
 """
 def gene_overview(data, info, gene_name, palette, order=None, save_fig=None, dpi=600, bbox_to_anchor='tight', grid=False, whitegrid= False):
 
-    if whitegrid == True:
-        sns.set_style("whitegrid")
+    reset_plot(whitegrid)
 
     data_copy = data.copy()
     data_copy = data_copy.dropna(axis=0)
@@ -629,11 +616,7 @@ def gene_overview(data, info, gene_name, palette, order=None, save_fig=None, dpi
     if save_fig != None:
         fig.savefig(str(save_fig), dpi=dpi, bbox_to_anchor=bbox_to_anchor)
 
-    #Reset plot aesthetics
-    del ax
-    plt.close()
-    plt.clf()
-    sns.set_style("darkgrid")
+    plt.show()
 
 """
 DESCRIPTION: Calculates r, r^2 values, and p-values for every gene against target gene for given dataset
@@ -702,8 +685,7 @@ MICARtools formatted data and info dataframes, palette is a dictionary of labels
 """
 def scatter(data, info, gene1, gene2, palette, add_linreg=False, order_legend=None, title=None, save_fig=None, dpi=600, bbox_to_anchor='tight', grid=False, whitegrid=False, alpha=1):
 
-    if whitegrid == True:
-        sns.set_style("whitegrid")
+    reset_plot(whitegrid)
 
     data_c = data.copy()
     data_c = data_c.dropna(axis=0)
@@ -759,11 +741,7 @@ def scatter(data, info, gene1, gene2, palette, add_linreg=False, order_legend=No
     if save_fig != None:
         plt.savefig(str(save_fig), dpi=dpi, bbox_to_anchor=bbox_to_anchor)
 
-    #Revert to default styles
-    del ax
-    plt.close()
-    plt.clf()
-    sns.set_style('darkgrid')
+    plt.show()
 
 """
 DESCRIPTION: Plot volcano plot for dataframe, can highlight subset of genes
@@ -795,11 +773,7 @@ def volcano(data, info, label_comp, label_base, highlight_genes=None, highlight_
             y_threshold=10, x_threshold=1, save_threshold_hits=None, save_threshold_hits_delimiter=',',
             save_fig=None, dpi=600, bbox_to_anchor='tight', whitegrid=False, return_data=False):
 
-    plt.close()
-    plt.clf()
-
-    if whitegrid == True:
-        sns.set_style("whitegrid")
+    reset_plot(whitegrid)
 
     #Prep dataframes
     data_c = data.copy()
@@ -885,9 +859,6 @@ def volcano(data, info, label_comp, label_base, highlight_genes=None, highlight_
     else:
         plt.show()
 
-    #Revert plot style
-    sns.set_style('darkgrid')
-
 """
 DESCRIPTION: Create scatterplot with r value and jointplot density distributions for axes
 
@@ -910,8 +881,7 @@ MICARtools formatted data and info dataframes, palette (if used) is a dictionary
 """
 def jointplot(data, info, gene1, gene2, kind='reg', palette=None, order=None, save_fig=None, dpi=600, bbox_to_anchor='tight', whitegrid=False, grid=False):
 
-    if whitegrid == True:
-        sns.set_style("whitegrid")
+    reset_plot(whitegrid)
 
     data_c = data.copy()
     data_c = data_c.dropna(axis=0)
@@ -951,12 +921,6 @@ def jointplot(data, info, gene1, gene2, kind='reg', palette=None, order=None, sa
     if save_fig != None:
         fig.savefig(str(save_fig), dpi=dpi, bbox_to_anchor=bbox_to_anchor)
 
-    #Revert to default styles
-    del ax
-    plt.close()
-    plt.clf()
-    sns.set_style('darkgrid')
-
 """
 DESCRIPTION: Create violin plots for all samples of a particular metric
 
@@ -981,8 +945,7 @@ data is formatted so that samples are rows, if not, specify in options and dataf
 def violin(data, info, y_data, x_data='label', samples='rows', ordered=False, y_threshold=None, save_fig=None, dpi=600,
             bbox_to_anchor='tight', figsize=None, whitegrid=False, grid=False):
 
-    if whitegrid == True:
-        sns.set_style("whitegrid")
+    reset_plot(whitegrid)
 
     data_c = data.copy()
 
@@ -1020,11 +983,7 @@ def violin(data, info, y_data, x_data='label', samples='rows', ordered=False, y_
     if save_fig != None:
         fig.savefig(str(save_fig), dpi=dpi, bbox_to_anchor=bbox_to_anchor)
 
-    #Revert to default styles
-    del ax
-    plt.close()
-    plt.clf()
-    sns.set_style('darkgrid')
+    plt.show()
 
 """
 DESCRIPTION: Create interactive scatter plot that displays relevant sample/gene name and coordinates
@@ -1106,4 +1065,4 @@ def interactive_scatter(data, x, y, plotly_login, file_name, highlight='sample',
                  )
 
     fig = dict(data=data, layout=layout)
-    py.iplot(fig, filename=str(file_name))
+    py.offline.plot(fig, filename=str(file_name))
