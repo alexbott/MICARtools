@@ -66,7 +66,7 @@ def truncate_gtf(gtf_file, truncate=45, save_file=None, save_coding=None):
     gtf_coding_c = gtf_coding.copy()
 
     print("Multiprocessing reference chunks -- this may take a while...")
-    gtf_truncated = parallelize(gtf_coding_c, truncate)
+    gtf_truncated = parallelize(truncate, gtf_coding_c)
 
     if save_file != None:
         gtf_truncated.to_csv(str(save_file), sep='\t', header=None, index=False, quoting=csv.QUOTE_NONE)
