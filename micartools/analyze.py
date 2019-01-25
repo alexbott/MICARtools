@@ -799,13 +799,8 @@ def volcano(data, info, label_comp, label_base, highlight_genes=None, highlight_
     data_c += 1e-7 #Avoid divide by 0 error
     drop_index = [] #Initialize list of indices to drop that don't behave
 
-
     data_c = parallelize(calculate_fc, data_c, label_comp, label_base)
     data_c = parallelize(calculate_p, data_c, label_comp, label_base, drop_index)
-
-    print(data_c.shape)
-
-    data_c = data_c[~data_c.index.duplicated()]
 
     #Plot all genes
     ax = sns.scatterplot(x='log2 Fold Change', y='-log10 P-Value', data=data_c, color='Black', alpha=alpha)

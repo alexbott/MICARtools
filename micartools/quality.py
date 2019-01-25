@@ -25,6 +25,7 @@ DEPENDENCIES
 import pandas as pd
 import matplotlib as plt
 import seaborn as sns
+from .utils import parallelize, threshold_util
 
 """
 DESCRIPTION: Check sample means and medians
@@ -51,6 +52,7 @@ If dataframe has been properly formatted previously and genes are in rows, the d
 def clean_df(data, axis=0):
 
     data = data.dropna(axis=axis)
+    data = data[~data.index.duplicated()]
 
     return data
 
@@ -63,14 +65,7 @@ minimum= Float or int of minimum count/read value to accept per gene (all sample
 """
 def threshold(data, minimum=None, maximum=None):
 
-    data_c = data.T.copy()
-
-    if minimum != None:
-        data_c = data_c[data_c.columns[data_c.min() > minimum]]
-
-    if maximum != None:
-        data_c = data_c[data_c.columns[data_c.max() < maximum]]
-
-    data_c = data_c.T
+    data_c = data.copy()
+    data_c = parallelize(threshold_util, data_c, minimum, maximum)
 
     return data_c

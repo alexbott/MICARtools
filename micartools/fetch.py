@@ -25,6 +25,7 @@ IMPORT DEPENDENCIES
 import os, sys
 import pandas as pd
 import GEOparse
+from .quality import clean_df
 
 """
 FUNCTIONS
@@ -58,6 +59,8 @@ def get_df(file_name, delimiter=",", low_memory=False, gene_axis='row'):
     else:
         print("Incorrect gene_axis option specified")
 
+    data = clean_df(data)
+
     return data
 
 """
@@ -75,6 +78,8 @@ def get_geo(geo_id):
     data = gse.pivot_samples('VALUE')
     del data.index.name
 
+    data = clean_df(data)
+    
     return data
 
 """

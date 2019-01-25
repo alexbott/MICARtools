@@ -107,6 +107,22 @@ def calculate_p(data, label_comp, label_base, drop_index):
     return data
 
 """
+"""
+def threshold_util(data, minimum, maximum):
+
+    data = data.T
+
+    if minimum != None:
+        data = data[data.columns[data.min() > minimum]]
+
+    if maximum != None:
+        data = data[data.columns[data.max() < maximum]]
+
+    data = data.T
+
+    return data
+
+"""
 DESCRIPTION: Parallelize function on a chunk of a dataframe
 """
 def parallelize(func, *args):
@@ -117,10 +133,12 @@ def parallelize(func, *args):
     data_split = np.array_split(args[0], partitions)
     pool = Pool(cores)
 
-    if len(args) == 4:
-        func = partial(calculate_p, label_comp=args[1], label_base=args[2], drop_index=args[3])
-    elif len(args) == 3:
+    if func == calculate_fc:
         func = partial(calculate_fc, label_comp=args[1], label_base=args[2])
+    elif func == calculate_p:
+        func = partial(calculate_p, label_comp=args[1], label_base=args[2], drop_index=args[3])
+    elif func == threshold_util:
+        func = partial(threshold_util, minimum=args[1], maximum=args[2])
     else:
         return
 
