@@ -29,17 +29,16 @@ import seaborn as sns
 from multiprocessing import cpu_count, Pool
 
 """
-DESCRIPTION:
+DESCRIPTION: Axis-agnostic list-reader from dataframe
 VARIABLES:
 USAGE:
 ASSUMPTIONS:
 """
-def custom_list(file):
-    gene_list = []
+def custom_list(file, delimiter=','):
 
-    with open(file, 'r') as f:
-        for line in f:
-            gene_list = line.split(",")
+    gene_df = pd.read_csv(str(file), sep=delimiter, index_col=False, header=None)
+    genes = gene_df.values.tolist()
+    gene_list = [val for sublist in genes for val in sublist]
 
     return gene_list
 
