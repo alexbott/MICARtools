@@ -22,6 +22,11 @@ this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 DEPENDENCIES
 """
+import matplotlib
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+import seaborn as sns
+from multiprocessing import cpu_count, Pool
 
 """
 DESCRIPTION:
@@ -77,3 +82,19 @@ def parallelize(data, func):
     pool.close()
     pool.join()
     return data
+
+"""
+DESCRIPTION: Reset plotting object to avoid bleed through
+"""
+def reset_plot(whitegrid, ax=False):
+
+    if ax == True:
+        del ax
+
+    plt.close()
+    plt.clf()
+
+    if whitegrid == True:
+        sns.set_style("whitegrid")
+    else:
+        sns.set_style("darkgrid")
