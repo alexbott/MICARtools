@@ -53,3 +53,24 @@ def clean_df(data, axis=0):
     data = data.dropna(axis=axis)
 
     return data
+
+"""
+DESCRIPTION: Remove genes from analysis where sequence coverage does not meet minimum
+
+VARIABLES:
+data= MICARtools formatted data
+minimum= Float or int of minimum count/read value to accept per gene (all samples need to meet this requirement to keep)
+"""
+def threshold(data, minimum=None, maximum=None):
+
+    data_c = data.T.copy()
+
+    if minimum != None:
+        data_c = data_c[data_c.columns[data_c.min() > minimum]]
+
+    if maximum != None:
+        data_c = data_c[data_c.columns[data_c.max() < maximum]]
+
+    data_c = data_c.T
+
+    return data_c
