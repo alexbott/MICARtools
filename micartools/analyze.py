@@ -796,6 +796,8 @@ def volcano(data, info, label_comp, label_base, highlight_genes=None, highlight_
     labels = pd.Series(info_c['id'].values,index=info_c[0]).to_dict()
     data_c = data_c.rename(labels, axis='columns')
 
+    data_c += 1e-7
+
     # Average every by cell line
     data_c['log2 Fold Change'] = np.log2((data_c.filter(regex=str(label_comp)).mean(axis=1)) / \
                                       (data_c.filter(regex=str(label_base)).mean(axis=1)))
