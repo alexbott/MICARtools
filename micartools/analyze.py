@@ -22,7 +22,7 @@ this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 DEPENDENCIES
 """
-from .utils import custom_list, reset_plot
+from .utils import custom_list, reset_plot, parallelize, calculate_fc, calculate_p
 import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
@@ -778,7 +778,7 @@ data should ONLY be sample normalized. If using a previous function that returne
 y_threshold must be a postive integer or float
 """
 def volcano(data, info, label_comp, label_base, highlight_genes=None, highlight_color='DarkRed', alpha=1, alpha_highlights=1,
-            y_threshold=10, x_threshold=1, save_threshold_hits=None, save_threshold_hits_delimiter=',',
+            y_threshold=None, x_threshold=None, save_threshold_hits=None, save_threshold_hits_delimiter=',',
             save_fig=None, dpi=600, bbox_to_anchor='tight', whitegrid=False, return_data=False):
 
     reset_plot(whitegrid)
@@ -796,22 +796,16 @@ def volcano(data, info, label_comp, label_base, highlight_genes=None, highlight_
     labels = pd.Series(info_c['id'].values,index=info_c[0]).to_dict()
     data_c = data_c.rename(labels, axis='columns')
 
-    data_c += 1e-7
+    data_c += 1e-7 #Avoid divide by 0 error
+    drop_index = [] #Initialize list of indices to drop that don't behave
 
-    # Average every by cell line
-    data_c['log2 Fold Change'] = np.log2((data_c.filter(regex=str(label_comp)).mean(axis=1)) / \
-                                      (data_c.filter(regex=str(label_base)).mean(axis=1)))
-    data_c['-log10 P-Value'] = ''
 
-    # Calculate p-value using 1-way ANOVA with replicates and append to df_oxsm_volc
-    for row in data_c.iterrows():
-        index, data = row
-        comp_row = data_c.loc[index].filter(regex=str(label_comp)).values.tolist()
-        ground_row = data_c.loc[index].filter(regex=str(label_base)).values.tolist()
+    data_c = parallelize(calculate_fc, data_c, label_comp, label_base)
+    data_c = parallelize(calculate_p, data_c, label_comp, label_base, drop_index)
 
-        # Append p_value to df_oxsm_volc
-        statistic, p_value = stats.ttest_ind(comp_row, ground_row)
-        data_c.loc[index,'-log10 P-Value'] = float(-1 * (np.log10(p_value)))
+    print(data_c.shape)
+
+    data_c = data_c[~data_c.index.duplicated()]
 
     #Plot all genes
     ax = sns.scatterplot(x='log2 Fold Change', y='-log10 P-Value', data=data_c, color='Black', alpha=alpha)
@@ -830,19 +824,21 @@ def volcano(data, info, label_comp, label_base, highlight_genes=None, highlight_
         ax = sns.scatterplot(x='log2 Fold Change', y='-log10 P-Value', data=df_genes, color=str(highlight_color), alpha=alpha_highlights)
 
     #Plot thresholds
-    if y_threshold != None and type(y_threshold) is int or type(y_threshold) is float:
-        if y_threshold > 0:
-            ax.axhline(y_threshold, ls='--', color='b')
+    if y_threshold != None:
+        if type(y_threshold) is int or type(y_threshold) is float:
+            if y_threshold > 0:
+                ax.axhline(y_threshold, ls='--', color='b')
+            else:
+                print('Invalid y_threshold provided, must be a positive integer or float (Y-axis threshold will not be plotted)')
         else:
             print('Invalid y_threshold provided, must be a positive integer or float (Y-axis threshold will not be plotted)')
-    else:
-        print('Invalid y_threshold provided, must be a positive integer or float (Y-axis threshold will not be plotted)')
 
-    if x_threshold != None and type(x_threshold) is int or type(x_threshold) is float:
-        ax.axvline(-x_threshold, ls='--', color='b')
-        ax.axvline(x_threshold, ls='--', color='b')
-    else:
-        print('Invalid x_threshold provided, must be an integer or float (X-axis threshold will not be plotted)')
+    if x_threshold != None:
+        if type(x_threshold) is int or type(x_threshold) is float:
+            ax.axvline(-x_threshold, ls='--', color='b')
+            ax.axvline(x_threshold, ls='--', color='b')
+        else:
+            print('Invalid x_threshold provided, must be an integer or float (X-axis threshold will not be plotted)')
 
     #Set labels and other plotting aesthetics
     ax.set_ylabel('-log$_1$$_0$(P-Value)')
@@ -854,20 +850,21 @@ def volcano(data, info, label_comp, label_base, highlight_genes=None, highlight_
         plt.savefig(str(save_fig), dpi=dpi, bbox_to_anchor=bbox_to_anchor)
 
     #Save hits if user-specified
-    df_c = data_c[['log2 Fold Change', '-log10 P-Value']].copy()
-    df_up = df_c.loc[(df_c['log2 Fold Change'] > x_threshold) & (df_c['-log10 P-Value'] > y_threshold)] #get upregulated hits
-    df_down = df_c.loc[(df_c['log2 Fold Change'] < -x_threshold) & (df_c['-log10 P-Value'] > y_threshold)] #get downregulated hits
-    thresh_hits = df_up.append(df_down) #append hits tables
+    if y_threshold != None and x_threshold != None:
+        df_c = data_c[['log2 Fold Change', '-log10 P-Value']].copy()
+        df_up = df_c.loc[(df_c['log2 Fold Change'] > x_threshold) & (df_c['-log10 P-Value'] > y_threshold)] #get upregulated hits
+        df_down = df_c.loc[(df_c['log2 Fold Change'] < -x_threshold) & (df_c['-log10 P-Value'] > y_threshold)] #get downregulated hits
+        thresh_hits = df_up.append(df_down) #append hits tables
 
-    #export table for user
-    if save_threshold_hits != None:
-        thresh_hits.to_csv(str(save_threshold_hits), sep=save_threshold_hits_delimiter)
+        #export table for user
+        if save_threshold_hits != None:
+            thresh_hits.to_csv(str(save_threshold_hits), sep=save_threshold_hits_delimiter)
 
-    #If return option provided, return dataframe, else print plot to stout
-    if return_data == True:
-        return thresh_hits
-    else:
-        plt.show()
+        #If return option provided, return dataframe, else print plot to stout
+        if return_data == True:
+            return thresh_hits
+
+    plt.show()
 
 """
 DESCRIPTION: Create scatterplot with r value and jointplot density distributions for axes
