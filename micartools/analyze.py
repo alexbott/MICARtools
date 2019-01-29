@@ -59,6 +59,8 @@ import micartools as mat
 col_colors = {'adenocarcinoma': 'grey',
         'adenoma': (0.8705882352941177, 0.5607843137254902, 0.0196078431372549),
         'normal': (0.00784313725490196, 0.6196078431372549, 0.45098039215686275)}
+cbar_kws= {'label': 'z-score',"shrink": 0.2, 'aspect': 10}
+
 mat.heatmap(data_scaled, data_labeled, color_dict=color_dict, gene_list='/path/to/gene_list.csv', figsize=(40,8))
 
 ASSUMPTIONS:
@@ -66,7 +68,7 @@ Data has been scaled and labeled with the MICARtools prep_data function
 """
 def heatmap(data_scaled, info, palette=None, gene_list=None, save_fig=None, dpi=600, bbox_to_anchor='tight', font_scale=.8,
     cmap=jakes_cmap, center=0, metric='euclidean', method='centroid', xticklabels=True, linewidths=.03, linecolor='#DCDCDC', col_cluster=True,
-    row_cluster=False, figsize=(16,6.5)):
+    row_cluster=False, figsize=(16,6.5), cbar_kws=None):
 
     reset_plot(True)
 
@@ -105,11 +107,10 @@ def heatmap(data_scaled, info, palette=None, gene_list=None, save_fig=None, dpi=
     else:
         plot_data = data_scaled.dropna(axis=0)
 
-
     #Generate clustermap
     sns.set(font_scale=float(font_scale))
     if palette is None:
-        sns.clustermap(plot_data,
+        ax = sns.clustermap(plot_data,
                         cmap=cmap,
                         center=float(center),
                         metric=str(metric),
@@ -119,10 +120,11 @@ def heatmap(data_scaled, info, palette=None, gene_list=None, save_fig=None, dpi=
                         linecolor=str(linecolor),
                         col_cluster=col_cluster,
                         row_cluster=row_cluster,
-                        figsize=figsize
+                        figsize=figsize,
+                        cbar_kws=cbar_kws
                        )
     else:
-        sns.clustermap(plot_data,
+        ax = sns.clustermap(plot_data,
                         cmap=cmap,
                         center=float(center),
                         metric=str(metric),
@@ -133,7 +135,8 @@ def heatmap(data_scaled, info, palette=None, gene_list=None, save_fig=None, dpi=
                         col_cluster=col_cluster,
                         row_cluster=row_cluster,
                         col_colors=color_map,
-                        figsize=figsize
+                        figsize=figsize,
+                        cbar_kws=cbar_kws
                        )
 
     #Save figure
@@ -366,6 +369,9 @@ def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_lab
         ax.set(xlabel='Principal Component', ylabel='Proportion of Variance Explained', title='Scree Plot')
         plt.savefig(str(save_fig[:-4]) + '_scree.pdf', dpi=dpi, bbox_to_anchor=bbox_to_anchor)
 
+        if scree_only == True:
+            plt.show()
+
         if grid == False:
             ax.grid(False)
 
@@ -523,7 +529,8 @@ def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_lab
                         r=0,
                         b=0,
                         t=0
-                    )
+                    ),
+                    hovermode='closest'
                 )
                 fig = go.Figure(data=data, layout=layout)
 
@@ -577,7 +584,7 @@ def pca(data_scaled, info, palette, grouping='samples', gene_list=None, gene_lab
     else:
         print('This feature has not been implemented yet')
 
-    return df_pca
+    #return df_pca
 
 """
 DESCRIPTION: Plot boxplot overlaid with swarmplot of each sample type's gene expression for the given gene
@@ -1063,7 +1070,8 @@ def interactive_scatter(data, x, y, plotly_login, file_name, highlight='sample',
     data = traces
     layout = dict(yaxis = dict(zeroline = False),
                   xaxis = dict(zeroline = False),
-                  showlegend=False
+                  showlegend=False,
+                  hovermode='closest'
                  )
 
     fig = dict(data=data, layout=layout)

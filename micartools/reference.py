@@ -102,6 +102,7 @@ def gene_dictionary(file, file_type='gtf', save_file=None, gene_id=0, gene_name=
         #From the gene info column, split out gene_id and gene_name
         gtf_genes['gene_id'] = gtf[8].str.split(';').str[gene_id]
         gtf_genes['gene_name'] = gtf[8].str.split(';').str[gene_name]
+        gtf_genes['length'] = abs(gtf[4] - gtf[3])
         gtf_genes['gene_id'] = gtf_genes['gene_id'].map(lambda x: x.lstrip('gene_id \"').rstrip('\"').rstrip(' '))
         gtf_genes['gene_name'] = gtf_genes['gene_name'].map(lambda x: x.lstrip('gene_name \"').rstrip('\"').rstrip(' '))
 
