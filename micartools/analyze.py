@@ -238,7 +238,7 @@ RETURNS: Dataframe with PCs calculated
 METHODS: 3-D PCA -- option to output as interactive plot by providing plotly credentials, or as a static plot without these credentials (default)
 
 VARIABLES:
-data_labeled= Unscaled dataframe with sample labels as created with the MICARtools prep_data function -- can be a dataframe prepared using the prep_data() function or log_scale() function
+data_scaled= Scaled dataframe as created with the MICARtools prep_data and scaling function -- can be a dataframe prepared using the prep_data() function or log_scale() function
 info= MICARtools formatted sample info dataframe
 palette= Dictionary of matplotlib compatible colors for samples; for plotly 3-D PCA,
 grouping= Perform PCA sample-wise (default) or gene-wise (grouping='genes')
@@ -786,7 +786,7 @@ y_threshold must be a postive integer or float
 """
 def volcano(data, info, label_comp, label_base, highlight_genes=None, highlight_color='DarkRed', alpha=1, alpha_highlights=1,
             y_threshold=None, x_threshold=None, save_threshold_hits=None, save_threshold_hits_delimiter=',',
-            save_fig=None, dpi=600, bbox_to_anchor='tight', whitegrid=False, return_data=False):
+            save_fig=None, dpi=600, bbox_to_anchor='tight', whitegrid=False, return_data=False, plotly_login=False):
 
     reset_plot(whitegrid)
 
@@ -810,46 +810,50 @@ def volcano(data, info, label_comp, label_base, highlight_genes=None, highlight_
     data_c = parallelize(calculate_p, data_c, label_comp, label_base, drop_index)
 
     #Plot all genes
-    ax = sns.scatterplot(x='log2 Fold Change', y='-log10 P-Value', data=data_c, color='Black', alpha=alpha)
+    if plotly_login == False:
+        ax = sns.scatterplot(x='log2 Fold Change', y='-log10 P-Value', data=data_c, color='Black', alpha=alpha)
 
-    #Plot selected genes if user-specified
-    if highlight_genes != None:
-        if type(highlight_genes) is list:
-            df_genes = data_c.reindex(labels=highlight_genes, axis=0)
-        elif type(highlight_genes) is str:
-            genes = custom_list(str(highlight_genes))
-            df_genes = data_c.reindex(labels=genes, axis=0)
-        else:
-            print('Invalid highlight_genes option provided.')
-            return
+        #Plot selected genes if user-specified
+        if highlight_genes != None:
+            if type(highlight_genes) is list:
+                df_genes = data_c.reindex(labels=highlight_genes, axis=0)
+            elif type(highlight_genes) is str:
+                genes = custom_list(str(highlight_genes))
+                df_genes = data_c.reindex(labels=genes, axis=0)
+            else:
+                print('Invalid highlight_genes option provided.')
+                return
 
-        ax = sns.scatterplot(x='log2 Fold Change', y='-log10 P-Value', data=df_genes, color=str(highlight_color), alpha=alpha_highlights)
+            ax = sns.scatterplot(x='log2 Fold Change', y='-log10 P-Value', data=df_genes, color=str(highlight_color), alpha=alpha_highlights)
 
-    #Plot thresholds
-    if y_threshold != None:
-        if type(y_threshold) is int or type(y_threshold) is float:
-            if y_threshold > 0:
-                ax.axhline(y_threshold, ls='--', color='b')
+        #Plot thresholds
+        if y_threshold != None:
+            if type(y_threshold) is int or type(y_threshold) is float:
+                if y_threshold > 0:
+                    ax.axhline(y_threshold, ls='--', color='b')
+                else:
+                    print('Invalid y_threshold provided, must be a positive integer or float (Y-axis threshold will not be plotted)')
             else:
                 print('Invalid y_threshold provided, must be a positive integer or float (Y-axis threshold will not be plotted)')
-        else:
-            print('Invalid y_threshold provided, must be a positive integer or float (Y-axis threshold will not be plotted)')
 
-    if x_threshold != None:
-        if type(x_threshold) is int or type(x_threshold) is float:
-            ax.axvline(-x_threshold, ls='--', color='b')
-            ax.axvline(x_threshold, ls='--', color='b')
-        else:
-            print('Invalid x_threshold provided, must be an integer or float (X-axis threshold will not be plotted)')
+        if x_threshold != None:
+            if type(x_threshold) is int or type(x_threshold) is float:
+                ax.axvline(-x_threshold, ls='--', color='b')
+                ax.axvline(x_threshold, ls='--', color='b')
+            else:
+                print('Invalid x_threshold provided, must be an integer or float (X-axis threshold will not be plotted)')
 
-    #Set labels and other plotting aesthetics
-    ax.set_ylabel('-log$_1$$_0$(P-Value)')
-    ax.set_xlabel('log$_2$(Fold Change)')
-    plt.grid(False)
+        #Set labels and other plotting aesthetics
+        ax.set_ylabel('-log$_1$$_0$(P-Value)')
+        ax.set_xlabel('log$_2$(Fold Change)')
+        plt.grid(False)
 
-    #Save plot if user-specified
-    if save_fig != None:
-        plt.savefig(str(save_fig), dpi=dpi, bbox_to_anchor=bbox_to_anchor)
+        #Save plot if user-specified
+        if save_fig != None:
+            plt.savefig(str(save_fig), dpi=dpi, bbox_to_anchor=bbox_to_anchor)
+    else:
+        interactive_scatter(data_c, info, x='log2 Fold Change', y='-log10 P-Value', plotly_login=plotly_login, file_name=save_fig, highlight='sample', palette=None)
+
 
     #Save hits if user-specified
     if y_threshold != None and x_threshold != None:
@@ -1000,7 +1004,7 @@ DESCRIPTION: Create interactive scatter plot that displays relevant sample/gene 
 VARIABLES:
 data= MICARtools formatted expression matrix
 """
-def interactive_scatter(data, x, y, plotly_login, file_name, highlight='sample', info=None, palette=None):
+def interactive_scatter(data, info, x, y, plotly_login, file_name, highlight='sample', gene_list=None, palette=None):
 
     import plotly
     import plotly.plotly as py
