@@ -50,17 +50,17 @@ def custom_list(file, delimiter=','):
 DESCRIPTION:
 """
 #Truncate 45 nt
-def truncate(gtf):
+def truncate(gtf, truncate_amount):
 
     gtf[8] = gtf[8].replace({'\"':''}, regex=True)
 
     gtf['plus'] = gtf[[2,3,4,6,8]].apply(lambda x:
-        (x[3] + 45) if x[2] == "exon" and x[3] + 45 <= x[4] and x[6] == "+" and "exon_number 1;" in x[8] else (
-        "delete_this" if x[2] == "exon" and x[3] + 45 > x[4] and x[6] == "+" and "exon_number 1;" in x[8] else x[3]),axis=1)
+        (x[3] + truncate_amount) if x[2] == "exon" and x[3] + truncate_amount <= x[4] and x[6] == "+" and "exon_number 1;" in x[8] else (
+        "delete_this" if x[2] == "exon" and x[3] + truncate_amount > x[4] and x[6] == "+" and "exon_number 1;" in x[8] else x[3]),axis=1)
 
     gtf['minus'] = gtf[[2,3,4,6,8]].apply(lambda x:
-        (x[4] - 45) if x[2] == "exon" and x[3] <= x[4] - 45 and x[6] == "-" and "exon_number 1;" in x[8] else (
-        "delete_this" if x[2] == "exon" and x[3] > x[4] - 45 and x[6] == "-" and "exon_number 1;" in x[8] else x[4]),axis=1)
+        (x[4] - truncate_amount) if x[2] == "exon" and x[3] <= x[4] - truncate_amount and x[6] == "-" and "exon_number 1;" in x[8] else (
+        "delete_this" if x[2] == "exon" and x[3] > x[4] - truncate_amount and x[6] == "-" and "exon_number 1;" in x[8] else x[4]),axis=1)
 
     #remove exon1s that are too short
     gtf = gtf[~gtf['plus'].isin(['delete_this'])]
@@ -141,6 +141,8 @@ def parallelize(func, *args):
         func = partial(calculate_p, label_comp=args[1], label_base=args[2], drop_index=args[3])
     elif func == threshold_util:
         func = partial(threshold_util, minimum=args[1], maximum=args[2])
+    elif func == truncate:
+        func = partial(truncate, truncate_amount=args[1])
     else:
         return
 

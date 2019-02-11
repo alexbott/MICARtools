@@ -47,7 +47,7 @@ save_coding= Save coding only GTF reference to file path and name
 ASSUMPTIONS:
 Input file is a properly formatted GTF file
 """
-def truncate_gtf(gtf_file, truncate=45, save_file=None, save_coding=None):
+def truncate_gtf(gtf_file, truncate_amount=45, save_file=None, save_coding=None):
 
     #Import gtf reference file to
     if str(args_dict['input']).endswith('.gtf'):
@@ -66,7 +66,7 @@ def truncate_gtf(gtf_file, truncate=45, save_file=None, save_coding=None):
     gtf_coding_c = gtf_coding.copy()
 
     print("Multiprocessing reference chunks -- this may take a while...")
-    gtf_truncated = parallelize(truncate, gtf_coding_c)
+    gtf_truncated = parallelize(truncate, gtf_coding_c, truncate_amount)
 
     if save_file != None:
         gtf_truncated.to_csv(str(save_file), sep='\t', header=None, index=False, quoting=csv.QUOTE_NONE)
