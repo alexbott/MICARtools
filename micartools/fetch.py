@@ -89,8 +89,28 @@ USAGE:
 ASSUMPTIONS:
 """
 def get_geo_info(geo_id):
+    gse = GEOparse.get_GEO(geo_id) #Import GSE dataset
 
-    print('Coming soon...')
+    with open('test.txt', 'w+') as f: #Create a text file for all the information for reference
+        for gsm_name, gsm in gse.gsms.items():
+            f.write(gsm_name + '\n')
+            for key, value in gsm.metadata.items():
+                f.write(" - %s : %s" % (key, ", ".join(value)) + '\n')
+
+    for gsm_name, gsm in gse.gsms.items(): #Immediately print the most relevant information
+        print("Name: ", gsm_name)
+        for key, value in gsm.metadata.items():
+            if key == 'title' or key == 'source_name_ch1' or key == 'characteristics_ch1' \
+            or key == 'treatment_protocol_ch1' or key == 'data_processing':
+                print(" - %s : %s" % (key, ", ".join(value)))
+
+    dict = {}
+    for gsm_name, gsm in gse.gsms.items(): #Create a dictionary for gsm identifier : sample description 
+        for key, value in gsm.metadata.items():
+            if key == 'title':
+                dict[gsm_name] = value
+    return dict
+
 
 
 """
